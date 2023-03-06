@@ -65,7 +65,7 @@ generate_data:
 
 copy_data:
 ## first, need to copy the generated files to the Postgres docker container
-	docker cp cmd/GenerateData/Generated/. subscription-postgres:/myData
+	docker cp GenerateData/Generated/. subscription-postgres:/myData
 	docker cp copy_data_to_postgres.sql subscription-postgres:/
 
 ## second, execute the sql file in the Postgres docker container

@@ -1,4 +1,4 @@
-package main
+package data
 
 import (
 	"errors"
@@ -34,43 +34,10 @@ type SubscriptionDish struct {
 	Note           string    `json:"Note"`
 }
 
-type SubscriptionRequested struct {
-	UserID     string    `json:"userID"`
-	PlaylistID string    `json:"playlistID"`
-	Customized bool      `json:"customized"`
-	Frequency  string    `json:"frequency"`
-	StartDate  time.Time `json:"startDate"`
-	EndDate    time.Time `json:"endDate"`
-}
-
-type SubscriptionDishRequested struct {
-	DishID       string    `json:"dishID"`
-	ScheduleTime time.Time `json:"scheduleTime"`
-	Frequency    string    `json:"frequency"`
-	Note         string    `json:"Note"`
-}
-
 // This struct includes all the data returned to the request
 // DishIncluded is a map structure, the key is the DishID
 // RestaurantInfo is a map structure, the key is the RestaurantID
 // RestaurantAddress is a map structure, the key is the AddressID
-
-type SubscriptionService struct {
-	DBConnection *DataQuery
-	Model        *SubscriptionServiceResponseDataDTO
-}
-
-// this SubscriptionServiceDataDTO represents the data returned to the client
-type SubscriptionServiceResponseDataDTO struct {
-	Subscription Subscription
-	DishIncluded []SubscriptionDish
-	DishDelivery []DishDelivery
-}
-
-type SubscriptionServiceRequestDataDTO struct {
-	SubscriptionRequest SubscriptionRequested
-	DishIncluded        []SubscriptionDishRequested
-}
 
 var (
 	ErrDuplicate    = errors.New("record already exists")

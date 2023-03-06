@@ -1,30 +1,65 @@
-package main
+package domain
 
 import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
+	"github.com/ClaudiaYao/CapstoneSubscriptionService/app/data"
 	"github.com/go-chi/chi"
 	"github.com/lithammer/shortuuid"
 )
 
+type SubscriptionService struct {
+	DBConnection *data.DataQuery
+	// Model        *SubscriptionServiceResponseDataDTO
+}
+
+// this SubscriptionServiceDataDTO represents the data returned to the client
+type SubscriptionServiceResponseDataDTO struct {
+	Subscription data.Subscription
+	DishIncluded []data.SubscriptionDish
+	DishDelivery []data.DishDelivery
+}
+
+type SubscriptionServiceRequestDataDTO struct {
+	SubscriptionRequest SubscriptionRequested
+	DishIncluded        []SubscriptionDishRequested
+}
+
+type SubscriptionRequested struct {
+	UserID     string    `json:"userID"`
+	PlaylistID string    `json:"playlistID"`
+	Customized bool      `json:"customized"`
+	Frequency  string    `json:"frequency"`
+	StartDate  time.Time `json:"startDate"`
+	EndDate    time.Time `json:"endDate"`
+}
+
+type SubscriptionDishRequested struct {
+	DishID       string    `json:"dishID"`
+	ScheduleTime time.Time `json:"scheduleTime"`
+	Frequency    string    `json:"frequency"`
+	Note         string    `json:"Note"`
+}
+
 // C: this PlaylistService is responsible for transfering information request/response
 // C: the database operation is conducted by its member *sql.DB
 // C: when designing API or micro-service, the service request passes data via JSON
-func (app *SubscriptionService) CreateSubscription(w http.ResponseWriter, r *http.Request) {
+func (service *SubscriptionService) CreateSubscription(w http.ResponseWriter, r *http.Request) {
 	// how to define the structure of SubscriptionServiceData is depending on the front end
 	var requestPayload SubscriptionServiceRequestDataDTO
 
-	err := app.readJSON(w, r, &requestPayload)
+	err := service.readJSON(w, r, &requestPayload)
 	if err != nil {
-		app.errorJSON(w, err, http.StatusBadRequest)
+		service.errorJSON(w, err, http.StatusBadRequest)
 		return
 	}
 
 	subscriptionReq := requestPayload.SubscriptionRequest
 
-	subscriptionInfo := Subscription{
+	subscriptionInfo := data.Subscription{
 		ID:         "Sub" + shortuuid.New(),
 		UserID:     subscriptionReq.UserID,
 		PlaylistID: subscriptionReq.PlaylistID,
@@ -36,10 +71,10 @@ func (app *SubscriptionService) CreateSubscription(w http.ResponseWriter, r *htt
 	}
 
 	dishIncluded := requestPayload.DishIncluded
-	dishes := []SubscriptionDish{}
+	dishes := []data.SubscriptionDish{}
 
 	for _, dishInfo := range dishIncluded {
-		dish := SubscriptionDish{
+		dish := data.SubscriptionDish{
 			ID:             "SDish" + shortuuid.New(),
 			DishID:         dishInfo.DishID,
 			SubscriptionID: subscriptionInfo.ID,
@@ -50,10 +85,10 @@ func (app *SubscriptionService) CreateSubscription(w http.ResponseWriter, r *htt
 		dishes = append(dishes, dish)
 	}
 
-	subscriptionID, err := app.GenerateNewSubscription(r.Context(), subscriptionInfo, dishes)
+	subscriptionID, err := service.GenerateNewSubscription(r.Context(), subscriptionInfo, dishes)
 
 	if err != nil {
-		app.errorJSON(w, errors.New("invalid query"), http.StatusBadRequest)
+		service.errorJSON(w, errors.New("invalid query"), http.StatusBadRequest)
 		return
 	}
 
@@ -62,8 +97,7 @@ func (app *SubscriptionService) CreateSubscription(w http.ResponseWriter, r *htt
 		Message: fmt.Sprintf("subscription is created: %s", subscriptionID),
 	}
 
-	// C: this means the success response
-	app.writeJSON(w, http.StatusAccepted, responsePayload)
+	service.writeJSON(w, http.StatusAccepted, responsePayload)
 }
 
 func (app *SubscriptionService) Welcome(w http.ResponseWriter, r *http.Request) {
@@ -85,17 +119,16 @@ func (app *SubscriptionService) GetDishBySubscriptionID(w http.ResponseWriter, r
 		Data:    subscriptionDishes,
 	}
 
-	// C: this means the success response
 	app.writeJSON(w, http.StatusAccepted, responsePayload)
 
 }
 
-func (app *SubscriptionService) GetDishDeliveryStatus(w http.ResponseWriter, r *http.Request) {
+func (service *SubscriptionService) GetDishDeliveryStatus(w http.ResponseWriter, r *http.Request) {
 
 	dishID := chi.URLParam(r, "dish_id")
-	dishDeliveryStatus, err := app.DBConnection.GetDishBySubscriptionID(r.Context(), dishID)
+	dishDeliveryStatus, err := service.DBConnection.GetDishBySubscriptionID(r.Context(), dishID)
 	if err != nil {
-		app.errorJSON(w, errors.New("invalid query"), http.StatusBadRequest)
+		service.errorJSON(w, errors.New("invalid query"), http.StatusBadRequest)
 		return
 	}
 
@@ -106,19 +139,19 @@ func (app *SubscriptionService) GetDishDeliveryStatus(w http.ResponseWriter, r *
 	}
 
 	// C: this means the success response
-	app.writeJSON(w, http.StatusAccepted, responsePayload)
+	service.writeJSON(w, http.StatusAccepted, responsePayload)
 
 }
 
-func (app *SubscriptionService) GetSubscriptionByID(w http.ResponseWriter, r *http.Request) {
+func (service *SubscriptionService) GetSubscriptionByID(w http.ResponseWriter, r *http.Request) {
 
 	// planType := entities.SourceB2C
 	// source := strings.TrimSpace(r.URL.Query().Get("source"))
 
 	id := chi.URLParam(r, "id")
-	subscription, err := app.DBConnection.GetSubscriptionByID(r.Context(), id)
+	subscription, err := service.DBConnection.GetSubscriptionByID(r.Context(), id)
 	if err != nil {
-		app.errorJSON(w, errors.New("invalid query"), http.StatusBadRequest)
+		service.errorJSON(w, errors.New("invalid query"), http.StatusBadRequest)
 		return
 	}
 
@@ -128,17 +161,17 @@ func (app *SubscriptionService) GetSubscriptionByID(w http.ResponseWriter, r *ht
 		Data:    subscription,
 	}
 
-	app.writeJSON(w, http.StatusAccepted, responsePayload)
+	service.writeJSON(w, http.StatusAccepted, responsePayload)
 
 }
 
-func (app *SubscriptionService) GetSubscriptionByUserID(w http.ResponseWriter, r *http.Request) {
+func (service *SubscriptionService) GetSubscriptionByUserID(w http.ResponseWriter, r *http.Request) {
 
-	user_id := chi.URLParam(r, "user_id")
+	userID := chi.URLParam(r, "user_id")
 
-	subscriptions, err := app.DBConnection.GetSubscriptionByUserID(r.Context(), user_id)
+	subscriptions, err := service.DBConnection.GetSubscriptionByUserID(r.Context(), userID)
 	if err != nil {
-		app.errorJSON(w, errors.New("invalid query"), http.StatusBadRequest)
+		service.errorJSON(w, errors.New("invalid query"), http.StatusBadRequest)
 		return
 	}
 
@@ -148,8 +181,7 @@ func (app *SubscriptionService) GetSubscriptionByUserID(w http.ResponseWriter, r
 		Data:    subscriptions,
 	}
 
-	// C: this means the success response
-	app.writeJSON(w, http.StatusAccepted, responsePayload)
+	service.writeJSON(w, http.StatusAccepted, responsePayload)
 }
 
 // 	// validate the user against the database

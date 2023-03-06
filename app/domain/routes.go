@@ -1,4 +1,4 @@
-package main
+package domain
 
 import (
 	"net/http"
@@ -8,7 +8,7 @@ import (
 	"github.com/go-chi/cors"
 )
 
-func (app *SubscriptionService) routes() http.Handler {
+func (service *SubscriptionService) Routes() http.Handler {
 	mux := chi.NewRouter()
 
 	// specify who is allowed to connect
@@ -30,15 +30,15 @@ func (app *SubscriptionService) routes() http.Handler {
 	// 	r.Get("/{code}", h.internalPlan.Get)
 	// 	r.Put("/{code}", h.internalPlan.Update)
 	// })
-	mux.Get("/", app.Welcome)
+	mux.Get("/", service.Welcome)
 
 	mux.Route("/subscription", func(mux chi.Router) {
-		mux.Post("/new", app.CreateSubscription)
-		mux.Get("/user/{user_id}", app.GetSubscriptionByUserID)
-		mux.Get("/{id}", app.GetSubscriptionByID)
+		mux.Post("/new", service.CreateSubscription)
+		mux.Get("/user/{user_id}", service.GetSubscriptionByUserID)
+		mux.Get("/{id}", service.GetSubscriptionByID)
 
-		mux.Get("/dish/{subscription_id}", app.GetDishBySubscriptionID)
-		mux.Get("/delivery/{dish_id}", app.GetDishDeliveryStatus)
+		mux.Get("/dish/{subscription_id}", service.GetDishBySubscriptionID)
+		mux.Get("/delivery/{dish_id}", service.GetDishDeliveryStatus)
 
 	})
 

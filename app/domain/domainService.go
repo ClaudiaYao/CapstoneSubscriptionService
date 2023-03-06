@@ -1,4 +1,4 @@
-package main
+package domain
 
 import (
 	"context"
@@ -6,20 +6,21 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/ClaudiaYao/CapstoneSubscriptionService/app/data"
 	"github.com/lithammer/shortuuid"
 )
 
-func (app *SubscriptionService) GenerateNewSubscription(ctx context.Context, subscription Subscription, dishes []SubscriptionDish) ([]DishDelivery, error) {
-	_, err := app.DBConnection.InsertSubscription(ctx, subscription)
+func (service *SubscriptionService) GenerateNewSubscription(ctx context.Context, subscription data.Subscription, dishes []data.SubscriptionDish) ([]data.DishDelivery, error) {
+	_, err := service.DBConnection.InsertSubscription(ctx, subscription)
 	if err != nil {
 
 		return nil, errors.New(fmt.Sprint("error when inserting the subscription: ", err))
 	}
 
-	dishesDelivery := []DishDelivery{}
+	dishesDelivery := []data.DishDelivery{}
 
 	for _, dish := range dishes {
-		dishID, err := app.DBConnection.InsertDishes(ctx, dish)
+		dishID, err := service.DBConnection.InsertDishes(ctx, dish)
 
 		if err != nil {
 			return nil, errors.New(fmt.Sprint("error when inserting the subscription dishes:", err))
@@ -27,14 +28,14 @@ func (app *SubscriptionService) GenerateNewSubscription(ctx context.Context, sub
 
 		nextTime := dish.ScheduleTime
 		for !nextTime.After(subscription.EndDate) {
-			dishDelivery := DishDelivery{
+			dishDelivery := data.DishDelivery{
 				ID:                 "DD" + shortuuid.New(),
 				SubscriptionDishID: dishID,
 				Status:             "Active",
 				ExpectedTime:       nextTime,
 				Note:               dish.Note,
 			}
-			app.DBConnection.InsertDishDelivery(ctx, dishDelivery)
+			service.DBConnection.InsertDishDelivery(ctx, dishDelivery)
 			nextTime = nextDelivery(dish.Frequency, nextTime)
 			dishesDelivery = append(dishesDelivery, dishDelivery)
 		}

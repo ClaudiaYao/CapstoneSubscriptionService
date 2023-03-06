@@ -1,17 +1,16 @@
-package main
+package data
 
 import (
 	"context"
 	"database/sql"
-	"time"
 )
 
-const dbTimeout = time.Second * 3
+// const dbTimeout = time.Second * 3
 
 // C: Although DataService struct only contains one *sql.DB, using this struct
 // C: Could allow to create own service
 type DataQuery struct {
-	db *sql.DB
+	DBConn *sql.DB
 }
 
 const getDisDeliveryCondition = `
@@ -19,7 +18,7 @@ select id, subscription_dish_id, status, expected_time, delivery_time, note FROM
 `
 
 func (dq *DataQuery) GetDishDeliveryCondition(ctx context.Context, subscriptionDishID string) ([]DishDelivery, error) {
-	rows, err := dq.db.QueryContext(ctx, getDisDeliveryCondition, subscriptionDishID)
+	rows, err := dq.DBConn.QueryContext(ctx, getDisDeliveryCondition, subscriptionDishID)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +52,7 @@ select id, dish_id, subscription_id, schedule_time, frequency, note FROM subscri
 `
 
 func (dq *DataQuery) GetDishBySubscriptionID(ctx context.Context, subscriptionID string) ([]SubscriptionDish, error) {
-	rows, err := dq.db.QueryContext(ctx, getDishBySubscriptionID, subscriptionID)
+	rows, err := dq.DBConn.QueryContext(ctx, getDishBySubscriptionID, subscriptionID)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +86,7 @@ select id, user_id, playlist_id, customized, status, frequency, start_date, end_
 `
 
 func (dq *DataQuery) GetSubscriptionByID(ctx context.Context, id string) (Subscription, error) {
-	row := dq.db.QueryRowContext(ctx, getSubscriptionByID, id)
+	row := dq.DBConn.QueryRowContext(ctx, getSubscriptionByID, id)
 	var i Subscription
 	err := row.Scan(
 		&i.ID,
@@ -107,7 +106,7 @@ select id, user_id, playlist_id, customized, status, frequency, start_date, end_
 `
 
 func (dq *DataQuery) GetSubscriptionByUserID(ctx context.Context, userID string) ([]Subscription, error) {
-	rows, err := dq.db.QueryContext(ctx, getSubscriptionByUserID, userID)
+	rows, err := dq.DBConn.QueryContext(ctx, getSubscriptionByUserID, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +145,7 @@ insert into dish_delivery ("id", "subscription_dish_id", "status",
 `
 
 func (dq *DataQuery) InsertDishDelivery(ctx context.Context, arg DishDelivery) (string, error) {
-	row := dq.db.QueryRowContext(ctx, insertDishDelivery,
+	row := dq.DBConn.QueryRowContext(ctx, insertDishDelivery,
 		arg.ID,
 		arg.SubscriptionDishID,
 		arg.Status,
@@ -174,7 +173,7 @@ insert into subscription_dish ("id", "dish_id", "subscription_id",
 `
 
 func (dq *DataQuery) InsertDishes(ctx context.Context, arg SubscriptionDish) (string, error) {
-	row := dq.db.QueryRowContext(ctx, insertDishes,
+	row := dq.DBConn.QueryRowContext(ctx, insertDishes,
 		arg.ID,
 		arg.DishID,
 		arg.SubscriptionID,
@@ -202,7 +201,7 @@ insert into subscription ("id", "user_id", "playlist_id",
 `
 
 func (dq *DataQuery) InsertSubscription(ctx context.Context, arg Subscription) (string, error) {
-	row := dq.db.QueryRowContext(ctx, insertSubscription,
+	row := dq.DBConn.QueryRowContext(ctx, insertSubscription,
 		arg.ID,
 		arg.UserID,
 		arg.PlaylistID,

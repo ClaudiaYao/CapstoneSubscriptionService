@@ -8,6 +8,8 @@ import (
 
 	"time"
 
+	"github.com/ClaudiaYao/CapstoneSubscriptionService/app/data"
+	"github.com/ClaudiaYao/CapstoneSubscriptionService/app/domain"
 	_ "github.com/jackc/pgconn"
 	_ "github.com/jackc/pgx/v4"
 	_ "github.com/jackc/pgx/v4/stdlib"
@@ -26,7 +28,7 @@ func main() {
 	}
 
 	//set up
-	app := SubscriptionService{
+	subService := &domain.SubscriptionService{
 		DBConnection: conn,
 	}
 
@@ -34,7 +36,7 @@ func main() {
 
 	srv := &http.Server{
 		Addr:    host,
-		Handler: app.routes(),
+		Handler: subService.Routes(),
 	}
 
 	err := srv.ListenAndServe()
@@ -44,7 +46,7 @@ func main() {
 }
 
 // C: this function will connect to database and then return *DataQuery
-func openDB(dsn string) (*DataQuery, error) {
+func openDB(dsn string) (*data.DataQuery, error) {
 
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
@@ -56,7 +58,7 @@ func openDB(dsn string) (*DataQuery, error) {
 		return nil, err
 	}
 
-	dataquery := DataQuery{db: db}
+	dataquery := data.DataQuery{DBConn: db}
 
 	return &dataquery, nil
 }
@@ -64,10 +66,6 @@ func openDB(dsn string) (*DataQuery, error) {
 // use godot package to load/read the .env file and
 // return the value of the key
 func goDotEnvVariable(key string) string {
-	// wd, err := os.Getwd()
-	// if err != nil {
-	// 	log.Panic(err)
-	// }
 
 	// load .env file which is located at the root path
 	err := godotenv.Load(".env")
@@ -80,7 +78,7 @@ func goDotEnvVariable(key string) string {
 }
 
 // C: wrap the openDB function and provide retry mechanism
-func connectToDB() *DataQuery {
+func connectToDB() *data.DataQuery {
 
 	// host := goDotEnvVariable("DB_HOST")
 	// port := goDotEnvVariable("DB_PORT")

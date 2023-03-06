@@ -1,10 +1,10 @@
 FROM golang:latest as builder
 
 
-RUN mkdir /app
-WORKDIR /app
+RUN mkdir /subscription
+WORKDIR /subscription
 
-ADD . ./app
+ADD . ./subscription
 COPY . .
 
 COPY Makefile go.mod go.sum .env ./
@@ -19,4 +19,4 @@ EXPOSE 8081
 
 # Specifies the executable command that runs when the container starts
 #RUN [ “/playlist-service”]
-CMD [ "/app/subscription-service"]
+CMD [ "/subscription/subscription-service"]
