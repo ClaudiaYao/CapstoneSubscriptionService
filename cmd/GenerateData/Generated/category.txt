@@ -1,0 +1,9 @@
+Sin|Singaporean|Quibusdam perferendis voluptatibus veniam ut excepturi nulla
+Ind|Indian|Temporibus aliquid, obcaecati soluta consequatur a veritatis ad omnis
+Mal|Malaysian|Quibusdam perferendis voluptatibus veniam ut excepturi nulla
+Tha|Thai|Quibusdam perferendis voluptatibus veniam ut excepturi nulla
+Vie|Vietnamese|Rerum sequi, earum delectus quidem tenetur est dicta exercitationem eius labore ipsa
+Tur|Turkish|Temporibus aliquid, obcaecati soluta consequatur a veritatis ad omnis
+Jap|Japanese|Rerum sequi, earum delectus quidem tenetur est dicta exercitationem eius labore ipsa
+Chi|Chinese|Quibusdam perferendis voluptatibus veniam ut excepturi nulla
+Kor|Korean|Rerum sequi, earum delectus quidem tenetur est dicta exercitationem eius labore ipsa

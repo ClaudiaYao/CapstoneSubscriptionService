@@ -1,0 +1,32 @@
+version: '3'
+
+services:
+  postgres:
+    image: 'postgres:latest'
+    container_name: subscription-postgres
+    ports:
+      - "5432:5432"
+    deploy:
+      mode: replicated
+      replicas: 1
+    user: postgres 
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: subscription
+
+
+  app:
+    container_name: subscription-service
+    build:
+      context: .
+      dockerfile: subscription-service.dockerfile
+    ports:
+      - '8081:8081'
+    deploy:
+      mode: replicated
+      replicas: 1
+    depends_on:
+      - postgres
+    environment:
+      DSN: "host=postgres port=5432 user=postgres password=password dbname=subscription sslmode=disable timezone=UTC connect_timeout=5"

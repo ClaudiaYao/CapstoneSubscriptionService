@@ -1,0 +1,50 @@
+RESsK952MRxf3Dv3khJSYhfb9|McDonald's|#02-01|785|North Bridge Road|198753
+RES294YBL3y4zjd7uTEvXnmjU|Starbucks|#01-03|11 Bali Lane|(empty)|189848
+RESXjBx3qUMYsHRoxgcZY9xp5|Chick-fil-A|#04-01|Bugis+|201 Victoria Street|188067
+RESxmUcy7inzAfKxQnd8XjFSP|Taco Bell|#01-49|The Centrepoint|176 Orchard Road|238843
+RESgVyp6zzkKFaNSBtYwa4iHB|Wendy's|#1-02|215 Upper Thomson Road|(empty)|574349
+RESxCuujgFXkpgegPHCSCptH3|Dunkin'|#01-3029|744 Bedok Reservoir Road|(empty)|470744
+RESP6NNDZ9J8zTcFBHHA65ZHf|Burger King|#01-03|11 Bali Lane|(empty)|189848
+RESkLNhfgoRnhdbbJKLqWg9Vn|Subway|#04-01|Bugis+|201 Victoria Street|188067
+RES5F5rhG4XRonp5fNGk4JQ2Q|Domino's|#02-01|306 Lavender Street|(empty)|338813
+RESpCii7M2NxPcidkQbm6WMUj|Chipotle Mexican Grill|#02-21|171 Telok Ayer Street|(empty)|68621
+RESbuAFsR4wz9eUrinq739jxF|Sonic Drive-In|#01-03D|Concorde Shopping Mall|100 Orchard Road|238840
+RESSVRJeJjCFrGQc5nMktc2xY|Panera Bread|#02-01|306 Lavender Street|(empty)|338813
+RESuQFfNnHxDLHDruuZ2XEfDX|Pizza Hut|#01-03D|Concorde Shopping Mall|100 Orchard Road|238840
+RESRdvYnAaFbPVbMzvB64sisi|KFC|#01-3029|744 Bedok Reservoir Road|(empty)|470744
+RESDb9zwmr29WYJmofGpQuLML|Popeyes|#01-3029|744 Bedok Reservoir Road|(empty)|470744
+RESN22pACZKbXHFqsonFQntyN|Panda Express|#02-21|171 Telok Ayer Street|(empty)|68621
+RESdV2tduWqdcTWQGF7BoCiGK|Dairy Queen|#02-21|171 Telok Ayer Street|(empty)|68621
+RES2vCGMPeMgS9TN8vnBGkan8|Arby's|#02-21|171 Telok Ayer Street|(empty)|68621
+RESvbBof9M7Lz8uwmhWYESBrT|Little Caesars|#01-3029|744 Bedok Reservoir Road|(empty)|470744
+RESyLTiqi3wAcnN9jFRphaPN6|Olive Garden|#02-01|785|North Bridge Road|198753
+RESqodcfibfB9GVZKNTLk5oTj|Applebee's|#02-01|306 Lavender Street|(empty)|338813
+REStfdtBN68ZmTxqGU7UzdC5o|Jack in the Box|#04-01|Bugis+|201 Victoria Street|188067
+RESUNZaftEPLpmKeJX69RTSKG|Buffalo Wild Wings|#01-3029|744 Bedok Reservoir Road|(empty)|470744
+RESPwREvxTvjWF7o4XBYTZnY|Texas Roadhouse|#02-21|171 Telok Ayer Street|(empty)|68621
+RESqqzi8t6GkrRxrWUrRTVTKJ|Papa Johns|#04-01|Bugis+|201 Victoria Street|188067
+RESMap3sykSVvpJfVxLbgAfsW|Chili's Grill & Bar|#1-02|215 Upper Thomson Road|(empty)|574349
+RES42hKx7reN4adYNQ2eLQf7R|Whataburger|#01-03D|Concorde Shopping Mall|100 Orchard Road|238840
+RESsLefDPfgXnmsp4RungvVYi|IHOP|#02-21|171 Telok Ayer Street|(empty)|68621
+RESEzhkFvRhZ84BuvK9SPpAqH|Outback Steakhouse|#04-01|Bugis+|201 Victoria Street|188067
+RESuvM5pkeEQrp6Yp7JxFPNRd|Culver's|#02-01|306 Lavender Street|(empty)|338813
+RESqLNFuZsy3a8Xby75oCLMFn|Denny's|#01-03D|Concorde Shopping Mall|100 Orchard Road|238840
+RESCfJ8xceozezsdL4oWrnQwF|Cracker Barrel|#01-01|44 Jalan Eunos|(empty)|419502
+RESnRJh6sTgAy42ZkPTQKvYPK|Raising Cane's Chicken Fingers|#02-01|785|North Bridge Road|198753
+RESig5fKNXQHovLb8QCRLfQ7|Red Lobster|#01-03|11 Bali Lane|(empty)|189848
+RES5iAZoranF9MujfqpuDaUeZ|Jimmy John's|#01-01|44 Jalan Eunos|(empty)|419502
+RES9LcLhn6xbvrVXsE2AFmiMh|The Cheesecake Factory|#01-01|44 Jalan Eunos|(empty)|419502
+RES7YFox4qBfvjwErnsgS9JpP|Zaxby's|#02-21|171 Telok Ayer Street|(empty)|68621
+RESS6ov5eWBC6yaYmoE5yG8FW|LongHorn Steakhouse|#01-3029|744 Bedok Reservoir Road|(empty)|470744
+RESmZyPZDijjPp5vXfJTmkvCH|Jersey Mike's Subs|#01-03|11 Bali Lane|(empty)|189848
+RESz2SoBYQKgXUtGZAgTNLowH|Wingstop|#1-02|215 Upper Thomson Road|(empty)|574349
+RES4QaWjMDMXtWE4EUZVbmoGN|Five Guys|#01-01|44 Jalan Eunos|(empty)|419502
+RESN8Cqzj8ctF2kdqK37XQvAG|Hardee's|#02-21|171 Telok Ayer Street|(empty)|68621
+RESCgLP2mrCGuV6cNp4HkQsyD|In-N-Out Burger|#04-01|Bugis+|201 Victoria Street|188067
+RESqfWxKajXVgP6ye7EomMfRW|Carl's Jr.|#1-02|215 Upper Thomson Road|(empty)|574349
+RES5NsAtkWEd42ST5vGnnQECZ|Bojangles|#1-02|215 Upper Thomson Road|(empty)|574349
+RESYRZoA3B4ypHGt5G9JedfXD|Red Robin|#02-01|785|North Bridge Road|198753
+RESEMKxudzv8dc9MEhA5AbjsB|Waffle House|#02-01|306 Lavender Street|(empty)|338813
+RESyeBBV3zgU9qDEhgtnm86Bk|Golden Corral|#01-3029|744 Bedok Reservoir Road|(empty)|470744
+RESAGcNdjsN5cja5wEj2iRyn5|BJ's Restaurant & Brewhouse|#01-3029|744 Bedok Reservoir Road|(empty)|470744
+RESDS8fNMEkNiMaDoEZ8WUvxA|Firehouse Subs|#01-01|44 Jalan Eunos|(empty)|419502

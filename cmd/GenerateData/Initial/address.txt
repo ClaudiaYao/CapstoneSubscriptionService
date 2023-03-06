@@ -1,0 +1,10 @@
+#02-01,785,North Bridge Road,198753
+#04-01, Bugis+, 201 Victoria Street,188067
+#01-49, The Centrepoint, 176 Orchard Road, 238843
+#01-01, 44 Jalan Eunos, 419502
+#01-03, 11 Bali Lane,189848
+#02-01, 306 Lavender Street, 338813
+#01-03D, Concorde Shopping Mall, 100 Orchard Road, 238840
+#02-21, 171 Telok Ayer Street, 068621
+#01-3029, 744 Bedok Reservoir Road, 470744
+#1-02, 215 Upper Thomson Road, 574349
