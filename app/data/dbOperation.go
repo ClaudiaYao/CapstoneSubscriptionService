@@ -224,3 +224,64 @@ func (dq *DataQuery) InsertSubscription(ctx context.Context, arg Subscription) (
 	)
 	return i.ID, err
 }
+
+const changeDishDeliveryStatus = `
+update dish_delivery set status = $1, note = "cancelled" where subscription_dish_id = $2 and status is NULL
+returning id, subscription_dish_id, status, expected_time, delivery_time, note`
+
+type ChangeDishDeliveryStatusParams struct {
+	Status             string `json:"status"`
+	SubscriptionDishID string `json:"subscriptionDishID"`
+}
+
+func (dq *DataQuery) ChangeDishDeliveryStatus(ctx context.Context, toStatus string, subscriptionDishID string) ([]DishDelivery, error) {
+	rows, err := dq.DBConn.QueryContext(ctx, changeDishDeliveryStatus, toStatus, subscriptionDishID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var dishesDelivery []DishDelivery
+	for rows.Next() {
+		var dishDeliver DishDelivery
+		if err := rows.Scan(
+			&dishDeliver.ID,
+			&dishDeliver.SubscriptionDishID,
+			&dishDeliver.Status,
+			&dishDeliver.ExpectedTime,
+			&dishDeliver.DeliveryTime,
+			&dishDeliver.Note,
+		); err != nil {
+			return nil, err
+		}
+		dishesDelivery = append(dishesDelivery, dishDeliver)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return dishesDelivery, nil
+}
+
+const changeSubscriptionStatus = `-- name: ChangeSubscriptionStatus :one
+update subscription set status = $1 where id = $2
+returning id, user_id, playlist_id, customized, status, frequency, start_date, end_date
+`
+
+func (dq *DataQuery) ChangeSubscriptionStatus(ctx context.Context, toStatus, subscriptionID string) (Subscription, error) {
+	row := dq.DBConn.QueryRowContext(ctx, changeSubscriptionStatus, toStatus, subscriptionID)
+	var sub Subscription
+	err := row.Scan(
+		&sub.ID,
+		&sub.UserID,
+		&sub.PlaylistID,
+		&sub.Customized,
+		&sub.Status,
+		&sub.Frequency,
+		&sub.StartDate,
+		&sub.EndDate,
+	)
+	return sub, err
+}

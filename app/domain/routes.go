@@ -34,6 +34,7 @@ func (service *SubscriptionService) Routes() http.Handler {
 
 	mux.Route("/subscription", func(mux chi.Router) {
 		mux.Post("/new", service.CreateSubscription)
+		mux.Put("/cancel/{subscription_id}", service.CancelSubscription)
 		mux.Get("/user/{user_id}", service.GetSubscriptionByUserID)
 		mux.Get("/{id}", service.GetSubscriptionByID)
 

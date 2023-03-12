@@ -10,14 +10,42 @@ import (
 	"github.com/lithammer/shortuuid"
 )
 
-func (service *SubscriptionService) GenerateNewSubscription(ctx context.Context, subscription data.Subscription, dishes []data.SubscriptionDish) ([]data.DishDelivery, error) {
-	_, err := service.DBConnection.InsertSubscription(ctx, subscription)
-	if err != nil {
+func (service *SubscriptionService) InsertNewSubscriptionRecord(ctx context.Context, payload SubscriptionServiceRequestDataDTO) (*SubscriptionServiceResponseDataDTO, error) {
+	subReq := payload.SubscriptionRequest
 
+	// this ensures that every time posting the request to create subscription, the id will be different.
+	subInfo := data.Subscription{
+		ID:         "Sub" + shortuuid.New(),
+		UserID:     subReq.UserID,
+		PlaylistID: subReq.PlaylistID,
+		Customized: subReq.Customized,
+		Status:     "Active",
+		Frequency:  subReq.Frequency,
+		StartDate:  subReq.StartDate,
+		EndDate:    subReq.EndDate,
+	}
+
+	dishIncluded := payload.DishIncluded
+	dishes := []data.SubscriptionDish{}
+
+	for _, dishInfo := range dishIncluded {
+		dish := data.SubscriptionDish{
+			ID:             "SDish" + shortuuid.New(),
+			DishID:         dishInfo.DishID,
+			SubscriptionID: subInfo.ID,
+			ScheduleTime:   dishInfo.ScheduleTime,
+			Frequency:      dishInfo.Frequency,
+			Note:           dishInfo.Note,
+		}
+		dishes = append(dishes, dish)
+	}
+
+	_, err := service.DBConnection.InsertSubscription(ctx, subInfo)
+	if err != nil {
 		return nil, errors.New(fmt.Sprint("error when inserting the subscription: ", err))
 	}
 
-	dishesDelivery := []data.DishDelivery{}
+	// dishesDelivery := []data.DishDelivery{}
 
 	for _, dish := range dishes {
 		dishID, err := service.DBConnection.InsertDishes(ctx, dish)
@@ -27,7 +55,7 @@ func (service *SubscriptionService) GenerateNewSubscription(ctx context.Context,
 		}
 
 		nextTime := dish.ScheduleTime
-		for !nextTime.After(subscription.EndDate) {
+		for !nextTime.After(subInfo.EndDate) {
 			dishDelivery := data.DishDelivery{
 				ID:                 "DD" + shortuuid.New(),
 				SubscriptionDishID: dishID,
@@ -37,11 +65,44 @@ func (service *SubscriptionService) GenerateNewSubscription(ctx context.Context,
 			}
 			service.DBConnection.InsertDishDelivery(ctx, dishDelivery)
 			nextTime = nextDelivery(dish.Frequency, nextTime)
-			dishesDelivery = append(dishesDelivery, dishDelivery)
+			// dishesDelivery = append(dishesDelivery, dishDelivery)
 		}
 
 	}
-	return dishesDelivery, err
+
+	response := &SubscriptionServiceResponseDataDTO{
+		Subscription: subInfo,
+		DishIncluded: dishes,
+	}
+	return response, err
+
+}
+
+func (service *SubscriptionService) CancelSubscriptionRelatedRecords(ctx context.Context, subscriptionID string) ([]data.DishDelivery, error) {
+
+	sub, err := service.DBConnection.ChangeSubscriptionStatus(ctx, "Cancelled", subscriptionID)
+
+	if err != nil {
+		return nil, errors.New(fmt.Sprint("error when changing the subscription: ", err))
+	}
+
+	dishes, err := service.DBConnection.GetDishBySubscriptionID(ctx, subscriptionID)
+	if err != nil {
+		return nil, errors.New(fmt.Sprint("error when querying the dishes: ", err))
+	}
+
+	dishDeliveryInfo := []data.DishDelivery{}
+
+	for _, dish := range dishes {
+		DeliveryInfo, err := service.DBConnection.ChangeDishDeliveryStatus(ctx, sub.Status, dish.DishID)
+
+		if err != nil {
+			return nil, errors.New(fmt.Sprint("error when updating the dish delivery status: ", err))
+		}
+		dishDeliveryInfo = append(dishDeliveryInfo, DeliveryInfo...)
+	}
+
+	return dishDeliveryInfo, err
 
 }
 

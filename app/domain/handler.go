@@ -8,7 +8,6 @@ import (
 
 	"github.com/ClaudiaYao/CapstoneSubscriptionService/app/data"
 	"github.com/go-chi/chi"
-	"github.com/lithammer/shortuuid"
 )
 
 type SubscriptionService struct {
@@ -20,7 +19,6 @@ type SubscriptionService struct {
 type SubscriptionServiceResponseDataDTO struct {
 	Subscription data.Subscription
 	DishIncluded []data.SubscriptionDish
-	DishDelivery []data.DishDelivery
 }
 
 type SubscriptionServiceRequestDataDTO struct {
@@ -49,6 +47,8 @@ type SubscriptionDishRequested struct {
 // C: when designing API or micro-service, the service request passes data via JSON
 func (service *SubscriptionService) CreateSubscription(w http.ResponseWriter, r *http.Request) {
 	// how to define the structure of SubscriptionServiceData is depending on the front end
+
+	// add validation for the request data
 	var requestPayload SubscriptionServiceRequestDataDTO
 
 	err := service.readJSON(w, r, &requestPayload)
@@ -57,35 +57,7 @@ func (service *SubscriptionService) CreateSubscription(w http.ResponseWriter, r 
 		return
 	}
 
-	subscriptionReq := requestPayload.SubscriptionRequest
-
-	subscriptionInfo := data.Subscription{
-		ID:         "Sub" + shortuuid.New(),
-		UserID:     subscriptionReq.UserID,
-		PlaylistID: subscriptionReq.PlaylistID,
-		Customized: subscriptionReq.Customized,
-		Status:     "Active",
-		Frequency:  subscriptionReq.Frequency,
-		StartDate:  subscriptionReq.StartDate,
-		EndDate:    subscriptionReq.EndDate,
-	}
-
-	dishIncluded := requestPayload.DishIncluded
-	dishes := []data.SubscriptionDish{}
-
-	for _, dishInfo := range dishIncluded {
-		dish := data.SubscriptionDish{
-			ID:             "SDish" + shortuuid.New(),
-			DishID:         dishInfo.DishID,
-			SubscriptionID: subscriptionInfo.ID,
-			ScheduleTime:   dishInfo.ScheduleTime,
-			Frequency:      dishInfo.Frequency,
-			Note:           dishInfo.Note,
-		}
-		dishes = append(dishes, dish)
-	}
-
-	subscriptionID, err := service.GenerateNewSubscription(r.Context(), subscriptionInfo, dishes)
+	subReqServiceDTO, err := service.InsertNewSubscriptionRecord(r.Context(), requestPayload)
 
 	if err != nil {
 		service.errorJSON(w, errors.New("invalid query"), http.StatusBadRequest)
@@ -94,22 +66,42 @@ func (service *SubscriptionService) CreateSubscription(w http.ResponseWriter, r 
 
 	responsePayload := jsonResponse{
 		Error:   false,
-		Message: fmt.Sprintf("subscription is created: %s", subscriptionID),
+		Message: "subscription is created",
+		Data:    subReqServiceDTO,
 	}
 
 	service.writeJSON(w, http.StatusAccepted, responsePayload)
 }
 
-func (app *SubscriptionService) Welcome(w http.ResponseWriter, r *http.Request) {
-	app.writeJSON(w, http.StatusAccepted, "Welcome to Subscription service!")
+func (service *SubscriptionService) Welcome(w http.ResponseWriter, r *http.Request) {
+	service.writeJSON(w, http.StatusAccepted, "Welcome to Subscription service!")
 }
 
-func (app *SubscriptionService) GetDishBySubscriptionID(w http.ResponseWriter, r *http.Request) {
+func (service *SubscriptionService) CancelSubscription(w http.ResponseWriter, r *http.Request) {
+	subscriptionID := chi.URLParam(r, "subscription_id")
+
+	CancelledDishes, err := service.CancelSubscriptionRelatedRecords(r.Context(), subscriptionID)
+
+	if err != nil {
+		service.errorJSON(w, errors.New("invalid query"), http.StatusBadRequest)
+		return
+	}
+
+	responsePayload := jsonResponse{
+		Error:   false,
+		Message: "subscription is created",
+		Data:    CancelledDishes,
+	}
+
+	service.writeJSON(w, http.StatusAccepted, responsePayload)
+}
+
+func (service *SubscriptionService) GetDishBySubscriptionID(w http.ResponseWriter, r *http.Request) {
 
 	subscriptionId := chi.URLParam(r, "subscription_id")
-	subscriptionDishes, err := app.DBConnection.GetDishBySubscriptionID(r.Context(), subscriptionId)
+	subscriptionDishes, err := service.DBConnection.GetDishBySubscriptionID(r.Context(), subscriptionId)
 	if err != nil {
-		app.errorJSON(w, errors.New(fmt.Sprint("invalid query", err)), http.StatusBadRequest)
+		service.errorJSON(w, errors.New(fmt.Sprint("invalid query", err)), http.StatusBadRequest)
 		return
 	}
 
@@ -119,7 +111,7 @@ func (app *SubscriptionService) GetDishBySubscriptionID(w http.ResponseWriter, r
 		Data:    subscriptionDishes,
 	}
 
-	app.writeJSON(w, http.StatusAccepted, responsePayload)
+	service.writeJSON(w, http.StatusAccepted, responsePayload)
 
 }
 

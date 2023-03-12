@@ -10,6 +10,72 @@ import (
 	"database/sql"
 )
 
+const changeDishDeliveryStatus = `-- name: ChangeDishDeliveryStatus :many
+update dish_delivery set status = $1 where subscription_dish_id = $2 and status = "(empty)"
+returning id, subscription_dish_id, status, expected_time, delivery_time, note
+`
+
+type ChangeDishDeliveryStatusParams struct {
+	Status             string `json:"status"`
+	SubscriptionDishID string `json:"subscriptionDishID"`
+}
+
+func (q *Queries) ChangeDishDeliveryStatus(ctx context.Context, arg ChangeDishDeliveryStatusParams) ([]DishDelivery, error) {
+	rows, err := q.db.QueryContext(ctx, changeDishDeliveryStatus, arg.Status, arg.SubscriptionDishID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []DishDelivery
+	for rows.Next() {
+		var i DishDelivery
+		if err := rows.Scan(
+			&i.ID,
+			&i.SubscriptionDishID,
+			&i.Status,
+			&i.ExpectedTime,
+			&i.DeliveryTime,
+			&i.Note,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const changeSubscriptionStatus = `-- name: ChangeSubscriptionStatus :one
+update subscription set status = $1 where id = $2
+returning id, user_id, playlist_id, customized, status, frequency, start_date, end_date
+`
+
+type ChangeSubscriptionStatusParams struct {
+	Status string `json:"status"`
+	ID     string `json:"id"`
+}
+
+func (q *Queries) ChangeSubscriptionStatus(ctx context.Context, arg ChangeSubscriptionStatusParams) (Subscription, error) {
+	row := q.db.QueryRowContext(ctx, changeSubscriptionStatus, arg.Status, arg.ID)
+	var i Subscription
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.PlaylistID,
+		&i.Customized,
+		&i.Status,
+		&i.Frequency,
+		&i.StartDate,
+		&i.EndDate,
+	)
+	return i, err
+}
+
 const getDisDeliveryCondition = `-- name: GetDisDeliveryCondition :many
 select id, subscription_dish_id, status, expected_time, delivery_time, note FROM dish_delivery where subscription_dish_id = $1
 `

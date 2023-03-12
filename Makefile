@@ -41,6 +41,7 @@ build_subscription:
 	@echo "Done!"
 
 
+
 ## references. No need this . docker-compose.yml has started the postgresql container
 ##migrate_db_run:
 ##	docker run --name postgres -p 5432:5432 -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=password -d postgres:14.0
@@ -62,6 +63,9 @@ migratedown:
 
 generate_data:
 	bash generate_data.sh
+
+generate_one_sub_post:
+	bash generate_single_request.sh
 
 copy_data:
 ## first, need to copy the generated files to the Postgres docker container

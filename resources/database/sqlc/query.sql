@@ -28,3 +28,11 @@ insert into dish_delivery ("id", "subscription_dish_id", "status",
   values ($1, $2, $3, $4, $5, $6)
   returning *;
 
+-- name: ChangeSubscriptionStatus :one
+update subscription set status = $1 where id = $2
+returning *;
+
+-- name: ChangeDishDeliveryStatus :many
+update dish_delivery set status = $1 where subscription_dish_id = $2 and status = "(empty)"
+returning *;
+

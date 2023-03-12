@@ -13,6 +13,15 @@ import (
 	"github.com/lithammer/shortuuid"
 )
 
+type allIDInfo struct {
+	categories           []string
+	restaurants          []string
+	dishes               []string
+	playlists            []string
+	playlistDishRelation map[string][]string
+	subscriptions        []string
+}
+
 // open address file and store them in a slice of structs
 type address struct {
 	unit_number   string
@@ -34,7 +43,108 @@ func main() {
 	// when generating subscription data, subscriptionDish file and DishDelivery file is gnerated
 	// together because they are closely related and need to refer to the data from playlist
 	// service
-	generateSubscription(playlistIDs, playlistDishRelation, dishIDs)
+	subscriptionIDs := generateSubscription(playlistIDs, playlistDishRelation, dishIDs)
+
+	keepData(categoryCodes, restaurantIDs, dishIDs, playlistIDs, playlistDishRelation, subscriptionIDs)
+
+}
+
+func keepData(categories []string, restaurantsIDs []string, dishIDs []string, playlistIDs []string, playlistDishRelations map[string][]string, subscriptionIDs []string) {
+	write_f, err := os.Create("Generated/all_IDs.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// remember to close the file at the end of the method
+	defer write_f.Close()
+
+	data := strings.Join(categories, "|") + "\n"
+	data += strings.Join(restaurantsIDs, "|") + "\n"
+	data += strings.Join(dishIDs, "|") + "\n"
+	data += strings.Join(playlistIDs, "|") + "\n"
+	data += strings.Join(subscriptionIDs, "|") + "\n"
+
+	_, err = write_f.WriteString(data)
+	if err != nil {
+		log.Fatal("error occurs when writing to file:", err)
+	}
+
+	write_rel, err := os.Create("Generated/playlistDishRel.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// remember to close the file at the end of the method
+	defer write_rel.Close()
+	data = ""
+	for key, value := range playlistDishRelations {
+		data += key + "|" + strings.Join(value, "|") + "\n"
+	}
+	_, err = write_rel.WriteString(data)
+	if err != nil {
+		log.Fatal("error occurs when writing to file:", err)
+	}
+
+}
+
+func extractIDs() (allIDInfo, error) {
+	readFile, err := os.Open("Generated/all_IDs.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// remember to close the file at the end of the program
+	defer readFile.Close()
+
+	fileScanner := bufio.NewScanner(readFile)
+
+	fileScanner.Split(bufio.ScanLines)
+
+	i := 0
+	ids := allIDInfo{}
+
+	for fileScanner.Scan() {
+		items := strings.Split(fileScanner.Text(), "|")
+
+		switch i {
+		case 0:
+			ids.categories = items
+		case 1:
+			ids.restaurants = items
+		case 2:
+			ids.dishes = items
+		case 3:
+			ids.playlists = items
+		case 4:
+			ids.subscriptions = items
+		}
+		i += 1
+
+	}
+
+	// fmt.Println(ids.restaurants)
+	// fmt.Println(ids.categories)
+	// fmt.Println(ids.dishes)
+	// fmt.Println(ids.playlists)
+	// fmt.Println(ids.subscriptions)
+
+	readFileRel, err := os.Open("Generated/playlistDishRel.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	// remember to close the file at the end of the program
+	defer readFileRel.Close()
+
+	fileScanner = bufio.NewScanner(readFileRel)
+
+	fileScanner.Split(bufio.ScanLines)
+
+	playlistDishRel := map[string][]string{}
+
+	for fileScanner.Scan() {
+		items := strings.Split(fileScanner.Text(), "|")
+		playlistDishRel[items[0]] = items[1:]
+	}
+
+	ids.playlistDishRelation = playlistDishRel
+	return ids, err
 
 }
 
@@ -52,11 +162,18 @@ func generateDishDeliveryRecords(subscriptionDishID string, ExpectedTime time.Ti
 	deliveryTime := ExpectedTime.Add(time.Minute * time.Duration(rand.Intn(500)))
 	note := "on time"
 
-	// Parse the data record
-	new_text := id + "|" + subscriptionDishID + "|" + status + "|" +
-		ExpectedTime.Format(time.RFC3339) + "|" +
-		deliveryTime.Format(time.RFC3339) + "|" + note
+	new_text := ""
 
+	// Parse the data record
+	if status == "Completed" {
+		new_text = id + "|" + subscriptionDishID + "|" + status + "|" +
+			ExpectedTime.Format(time.RFC3339) + "|" +
+			deliveryTime.Format(time.RFC3339) + "|" + note
+	} else {
+		new_text = id + "|" + subscriptionDishID + "|" + status + "|" +
+			ExpectedTime.Format(time.RFC3339) + "|" +
+			"\\N" + "|" + "not deliver yet"
+	}
 	_, err = write_f.WriteString(new_text + "\n")
 	if err != nil {
 		log.Fatal("error occurs when writing to file:", err)
