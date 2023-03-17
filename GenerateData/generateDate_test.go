@@ -75,7 +75,6 @@ func TestGenerateNewSubscriptionDTO(t *testing.T) {
 	} else {
 
 		dishIDs := infoIDs.playlistDishRelation[subReq.PlaylistID]
-		fmt.Println(dishIDs)
 
 		for _, dishID := range dishIDs {
 			dish := SubDishRequested{

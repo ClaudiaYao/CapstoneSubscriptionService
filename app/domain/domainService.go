@@ -78,7 +78,7 @@ func (service *SubscriptionService) InsertNewSubscriptionRecord(ctx context.Cont
 
 }
 
-func (service *SubscriptionService) CancelSubscriptionRelatedRecords(ctx context.Context, subscriptionID string) ([]data.DishDelivery, error) {
+func (service *SubscriptionService) CancelSubscriptionRelatedRecords(ctx context.Context, subscriptionID string) (map[string][]data.DishDelivery, error) {
 
 	sub, err := service.DBConnection.ChangeSubscriptionStatus(ctx, "Cancelled", subscriptionID)
 
@@ -91,15 +91,15 @@ func (service *SubscriptionService) CancelSubscriptionRelatedRecords(ctx context
 		return nil, errors.New(fmt.Sprint("error when querying the dishes: ", err))
 	}
 
-	dishDeliveryInfo := []data.DishDelivery{}
+	dishDeliveryInfo := map[string][]data.DishDelivery{}
 
 	for _, dish := range dishes {
-		DeliveryInfo, err := service.DBConnection.ChangeDishDeliveryStatus(ctx, sub.Status, dish.DishID)
-
+		DeliveryInfo, err := service.DBConnection.ChangeDishDeliveryStatus(ctx, sub.Status, dish.ID)
+		fmt.Println(dish.DishID, DeliveryInfo)
 		if err != nil {
 			return nil, errors.New(fmt.Sprint("error when updating the dish delivery status: ", err))
 		}
-		dishDeliveryInfo = append(dishDeliveryInfo, DeliveryInfo...)
+		dishDeliveryInfo[dish.ID] = DeliveryInfo
 	}
 
 	return dishDeliveryInfo, err

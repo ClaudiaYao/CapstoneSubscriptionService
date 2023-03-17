@@ -226,13 +226,8 @@ func (dq *DataQuery) InsertSubscription(ctx context.Context, arg Subscription) (
 }
 
 const changeDishDeliveryStatus = `
-update dish_delivery set status = $1, note = "cancelled" where subscription_dish_id = $2 and status is NULL
+update dish_delivery set status = $1 where subscription_dish_id = $2 and delivery_time is NULL
 returning id, subscription_dish_id, status, expected_time, delivery_time, note`
-
-type ChangeDishDeliveryStatusParams struct {
-	Status             string `json:"status"`
-	SubscriptionDishID string `json:"subscriptionDishID"`
-}
 
 func (dq *DataQuery) ChangeDishDeliveryStatus(ctx context.Context, toStatus string, subscriptionDishID string) ([]DishDelivery, error) {
 	rows, err := dq.DBConn.QueryContext(ctx, changeDishDeliveryStatus, toStatus, subscriptionDishID)
@@ -265,7 +260,7 @@ func (dq *DataQuery) ChangeDishDeliveryStatus(ctx context.Context, toStatus stri
 	return dishesDelivery, nil
 }
 
-const changeSubscriptionStatus = `-- name: ChangeSubscriptionStatus :one
+const changeSubscriptionStatus = `
 update subscription set status = $1 where id = $2
 returning id, user_id, playlist_id, customized, status, frequency, start_date, end_date
 `

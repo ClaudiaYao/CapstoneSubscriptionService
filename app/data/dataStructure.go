@@ -10,19 +10,19 @@ type DishDelivery struct {
 	SubscriptionDishID string    `json:"subscriptionDishID"`
 	Status             string    `json:"status"`
 	ExpectedTime       time.Time `json:"expectedTime"`
-	DeliveryTime       time.Time `json:"deliveryTime"`
-	Note               string    `json:"note"`
+	DeliveryTime       time.Time `json:"deliveryTime,omitempty"`
+	Note               string    `json:"note,omitempty"`
 }
 
 type Subscription struct {
 	ID         string    `json:"id"`
 	UserID     string    `json:"userID"`
-	PlaylistID string    `json:"playlistID"`
+	PlaylistID string    `json:"playlistID,omitempty"`
 	Customized bool      `json:"customized"`
 	Status     string    `json:"status"`
 	Frequency  string    `json:"frequency"`
 	StartDate  time.Time `json:"startDate"`
-	EndDate    time.Time `json:"endDate"`
+	EndDate    time.Time `json:"endDate,omitempty"`
 }
 
 type SubscriptionDish struct {
@@ -31,7 +31,7 @@ type SubscriptionDish struct {
 	SubscriptionID string    `json:"subscriptionID"`
 	ScheduleTime   time.Time `json:"scheduleTime"`
 	Frequency      string    `json:"frequency"`
-	Note           string    `json:"Note"`
+	Note           string    `json:"Note,omitempty"`
 }
 
 // This struct includes all the data returned to the request

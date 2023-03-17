@@ -5,7 +5,7 @@ services:
     image: 'postgres:latest'
     container_name: subscription-postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     deploy:
       mode: replicated
       replicas: 1
@@ -22,7 +22,7 @@ services:
       context: .
       dockerfile: subscription-service.dockerfile
     ports:
-      - '8081:8081'
+      - '8083:8083'
     deploy:
       mode: replicated
       replicas: 1

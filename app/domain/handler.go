@@ -32,14 +32,14 @@ type SubscriptionRequested struct {
 	Customized bool      `json:"customized"`
 	Frequency  string    `json:"frequency"`
 	StartDate  time.Time `json:"startDate"`
-	EndDate    time.Time `json:"endDate"`
+	EndDate    time.Time `json:"endDate,omitempty"`
 }
 
 type SubscriptionDishRequested struct {
 	DishID       string    `json:"dishID"`
 	ScheduleTime time.Time `json:"scheduleTime"`
 	Frequency    string    `json:"frequency"`
-	Note         string    `json:"Note"`
+	Note         string    `json:"Note,omitempty"`
 }
 
 // C: this PlaylistService is responsible for transfering information request/response
@@ -83,13 +83,13 @@ func (service *SubscriptionService) CancelSubscription(w http.ResponseWriter, r 
 	CancelledDishes, err := service.CancelSubscriptionRelatedRecords(r.Context(), subscriptionID)
 
 	if err != nil {
-		service.errorJSON(w, errors.New("invalid query"), http.StatusBadRequest)
+		service.errorJSON(w, err, http.StatusBadRequest)
 		return
 	}
 
 	responsePayload := jsonResponse{
 		Error:   false,
-		Message: "subscription is created",
+		Message: fmt.Sprintf("subscription %s is cancelled", subscriptionID),
 		Data:    CancelledDishes,
 	}
 

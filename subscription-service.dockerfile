@@ -18,5 +18,4 @@ RUN go build -o subscription-service ./cmd
 EXPOSE 8081
 
 # Specifies the executable command that runs when the container starts
-#RUN [ “/playlist-service”]
 CMD [ "/subscription/subscription-service"]
