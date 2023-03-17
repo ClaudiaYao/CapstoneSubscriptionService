@@ -34,6 +34,13 @@ type SubscriptionDish struct {
 	Note           string    `json:"Note,omitempty"`
 }
 
+type MailPayload struct {
+	From    string `json:"from"`
+	To      string `json:"to"`
+	Subject string `json:"subject"`
+	Message string `json:"message"`
+}
+
 // This struct includes all the data returned to the request
 // DishIncluded is a map structure, the key is the DishID
 // RestaurantInfo is a map structure, the key is the RestaurantID

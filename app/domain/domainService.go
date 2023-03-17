@@ -1,14 +1,47 @@
 package domain
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/ClaudiaYao/CapstoneSubscriptionService/app/data"
 	"github.com/lithammer/shortuuid"
 )
+
+func (service *SubscriptionService) SendEmail(ctx context.Context, msg data.MailPayload) (string, error) {
+	jsonData, _ := json.MarshalIndent(msg, "", "\t")
+
+	// call the mail service
+	mailServiceURL := "http://localhost:8084/send"
+
+	// post to mail service
+	request, err := http.NewRequest("POST", mailServiceURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return "", err
+	}
+
+	request.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	response, err := client.Do(request)
+	if err != nil {
+		return "", err
+	}
+	defer response.Body.Close()
+
+	// make sure we get back the right status code
+	if response.StatusCode != http.StatusAccepted {
+		return "", errors.New("error calling mail service")
+	}
+
+	return msg.To, nil
+
+}
 
 func (service *SubscriptionService) InsertNewSubscriptionRecord(ctx context.Context, payload SubscriptionServiceRequestDataDTO) (*SubscriptionServiceResponseDataDTO, error) {
 	subReq := payload.SubscriptionRequest
