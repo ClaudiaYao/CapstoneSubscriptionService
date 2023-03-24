@@ -25,19 +25,6 @@ func (mr *malformedRequest) Error() string {
 }
 
 func decodeJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) error {
-	// If the Content-Type header is present, check that it has the value
-	// application/json. Note that we are using the gddo/httputil/header
-	// package to parse and extract the value here, so the check works
-	// even if the client includes additional charset or boundary
-	// information in the header.
-
-	// if r.Header.Get("Content-Type") != "" {
-	// 	value, _ := header.ParseValueAndParams(r.Header, "Content-Type")
-	// 	if value != "application/json" {
-	// 		msg := "Content-Type header is not application/json"
-	// 		return &malformedRequest{status: http.StatusUnsupportedMediaType, msg: msg}
-	// 	}
-	// }
 
 	r.Body = http.MaxBytesReader(w, r.Body, 1048576)
 

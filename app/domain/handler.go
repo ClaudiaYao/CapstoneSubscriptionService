@@ -1,18 +1,28 @@
 package domain
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/ClaudiaYao/CapstoneSubscriptionService/app/data"
+	auth "github.com/ClaudiaYao/CapstoneSubscriptionService/app/domain/auth"
 	"github.com/go-chi/chi"
 )
 
 type SubscriptionService struct {
 	DBConnection *data.DataQuery
-	// Model        *SubscriptionServiceResponseDataDTO
+	JwtMaker     *auth.JWTMaker
+	JwtVerifier  *auth.JWTVerifier
+	AppConfig    *AppConfiguration
+}
+
+type AppConfiguration struct {
+	TokenExpireSecs int
+	ServiceHost     string
 }
 
 // this SubscriptionServiceDataDTO represents the data returned to the client
@@ -64,9 +74,21 @@ func (service *SubscriptionService) CreateSubscription(w http.ResponseWriter, r 
 		return
 	}
 
+	mailMsg := data.MailPayload{
+		Subject: "subscription is success.",
+		Message: "detailed information. TODO",
+	}
+
+	toAddress, err := service.SendEmail(r.Context(), mailMsg)
+
+	if err != nil {
+		service.errorJSON(w, errors.New("email sending failure"), http.StatusBadRequest)
+		return
+	}
+
 	responsePayload := jsonResponse{
 		Error:   false,
-		Message: "subscription is created",
+		Message: "subscription is created and mail sent to " + toAddress,
 		Data:    subReqServiceDTO,
 	}
 
@@ -174,6 +196,44 @@ func (service *SubscriptionService) GetSubscriptionByUserID(w http.ResponseWrite
 	}
 
 	service.writeJSON(w, http.StatusAccepted, responsePayload)
+}
+
+func (service *SubscriptionService) AuthenticateUser(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		authorizationHeader := r.Header.Get("authorization")
+
+		if len(authorizationHeader) == 0 {
+			err := errors.New("authorization header is not provided")
+			service.errorJSON(w, err, http.StatusUnauthorized)
+			return
+		}
+
+		fields := strings.Fields(authorizationHeader)
+		if len(fields) < 2 {
+			err := errors.New("invalid authorization header format")
+			service.errorJSON(w, err, http.StatusUnauthorized)
+			return
+		}
+
+		authorizationType := strings.ToLower(fields[0])
+		if authorizationType != "bearer" {
+			err := fmt.Errorf("unsupported authorization type %s", authorizationType)
+			service.errorJSON(w, err, http.StatusUnauthorized)
+			return
+		}
+
+		accessToken := fields[1]
+		payload, err := service.JwtVerifier.GetMetaData(accessToken)
+		if err != nil {
+			service.errorJSON(w, err, http.StatusUnauthorized)
+			return
+		}
+
+		// add userID to the header of the request
+		ctx := context.WithValue(r.Context(), "userID", payload.UserID)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }
 
 // 	// validate the user against the database

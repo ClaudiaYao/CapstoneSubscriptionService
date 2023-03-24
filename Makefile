@@ -67,6 +67,9 @@ generate_data:
 generate_one_sub_post:
 	bash generate_single_request.sh
 
+generate_one_user_token:
+	bash generate_single_token.sh
+
 copy_data:
 ## first, need to copy the generated files to the Postgres docker container
 	docker cp GenerateData/Generated/. subscription-postgres:/myData

@@ -2,6 +2,7 @@ package domain
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -33,6 +34,11 @@ func (service *SubscriptionService) Routes() http.Handler {
 	mux.Get("/", service.Welcome)
 
 	mux.Route("/subscription", func(mux chi.Router) {
+
+		mux.Use(middleware.Timeout(60 * time.Second))
+		mux.Use(middleware.Logger)
+		mux.Use(service.AuthenticateUser)
+
 		mux.Post("/new", service.CreateSubscription)
 		mux.Put("/cancel/{subscription_id}", service.CancelSubscription)
 		mux.Get("/user/{user_id}", service.GetSubscriptionByUserID)

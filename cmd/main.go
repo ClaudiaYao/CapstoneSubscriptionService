@@ -5,11 +5,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"time"
 
 	"github.com/ClaudiaYao/CapstoneSubscriptionService/app/data"
-	"github.com/ClaudiaYao/CapstoneSubscriptionService/app/domain"
+	domain "github.com/ClaudiaYao/CapstoneSubscriptionService/app/domain"
+	"github.com/ClaudiaYao/CapstoneSubscriptionService/app/domain/auth"
 	_ "github.com/jackc/pgconn"
 	_ "github.com/jackc/pgx/v4"
 	_ "github.com/jackc/pgx/v4/stdlib"
@@ -27,21 +29,48 @@ func main() {
 		log.Panic("Can't connect to Postgres!")
 	}
 
+	appCon := getConfig()
+	tokenPath := "app/domain/auth/tokenData"
+	jwtMaker, err := auth.NewJWTMaker(tokenPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	jwtVerifier, err := auth.NewJWTVerifier(tokenPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	//set up
 	subService := &domain.SubscriptionService{
 		DBConnection: conn,
+		AppConfig:    appCon,
+		JwtMaker:     jwtMaker,
+		JwtVerifier:  jwtVerifier,
 	}
 
-	host := goDotEnvVariable("SERVICE_HOST")
-
 	srv := &http.Server{
-		Addr:    host,
+		Addr:    appCon.ServiceHost,
 		Handler: subService.Routes(),
 	}
 
-	err := srv.ListenAndServe()
+	err = srv.ListenAndServe()
 	if err != nil {
 		log.Panic(err)
+	}
+}
+
+func getConfig() *domain.AppConfiguration {
+
+	expireSec, err := strconv.Atoi(GoDotEnvVariable("TOKEN_EXPIRE_SECS"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	servicePort := GoDotEnvVariable("SERVICE_HOST")
+	return &domain.AppConfiguration{
+		TokenExpireSecs: expireSec,
+		ServiceHost:     servicePort,
 	}
 }
 
@@ -61,20 +90,6 @@ func openDB(dsn string) (*data.DataQuery, error) {
 	dataquery := data.DataQuery{DBConn: db}
 
 	return &dataquery, nil
-}
-
-// use godot package to load/read the .env file and
-// return the value of the key
-func goDotEnvVariable(key string) string {
-
-	// load .env file which is located at the root path
-	err := godotenv.Load(".env")
-
-	if err != nil {
-		log.Fatalf("Error loading .env file")
-	}
-
-	return os.Getenv(key)
 }
 
 // C: wrap the openDB function and provide retry mechanism
@@ -112,4 +127,18 @@ func connectToDB() *data.DataQuery {
 		time.Sleep(2 * time.Second)
 		continue
 	}
+}
+
+// use godot package to load/read the .env file and
+// return the value of the key
+func GoDotEnvVariable(key string) string {
+
+	// load .env file which is located at the root path
+	err := godotenv.Load(".env")
+
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+
+	return os.Getenv(key)
 }

@@ -96,6 +96,8 @@ func TestGenerateNewSubscriptionDTO(t *testing.T) {
 
 	jsonResult, _ := json.MarshalIndent(subReqServiceDTO, "", " ")
 
+	
+
 	fmt.Println("================Generated Subscription Data for Posting====================")
 	fmt.Println(string(jsonResult))
 	fmt.Println("===========================================================================")
