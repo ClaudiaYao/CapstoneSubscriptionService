@@ -48,7 +48,7 @@ func (maker *JWTMaker) CreateJWTToken(userID string, duration time.Duration) (st
 	payload := Payload{
 		UserID:    userID,
 		IssuedAt:  time.Now(),
-		ExpiredAt: time.Now().Add(time.Duration(time.Second) * 300),
+		ExpiredAt: time.Now().Add(duration),
 	}
 
 	jwtToken := jwt.NewWithClaims(jwt.SigningMethodRS256, &payload)

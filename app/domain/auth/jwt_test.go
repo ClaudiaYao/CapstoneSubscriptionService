@@ -15,7 +15,7 @@ func TestCreateJWT(t *testing.T) {
 	}
 
 	userID := "user6"
-	token, err := jwtMaker.CreateJWTToken(userID, time.Duration(time.Second)*300)
+	token, err := jwtMaker.CreateJWTToken(userID, time.Duration(time.Second)*1800)
 
 	if err != nil {
 		log.Panic(err)

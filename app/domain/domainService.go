@@ -17,7 +17,7 @@ func (service *SubscriptionService) SendEmail(ctx context.Context, msg data.Mail
 	jsonData, _ := json.MarshalIndent(msg, "", "\t")
 
 	// call the mail service
-	mailServiceURL := "http://localhost:8084/send"
+	mailServiceURL := "http://" + service.AppConfig.EmailServiceContainerName + ":8084/send"
 
 	// post to mail service
 	request, err := http.NewRequest("POST", mailServiceURL, bytes.NewBuffer(jsonData))
@@ -25,6 +25,7 @@ func (service *SubscriptionService) SendEmail(ctx context.Context, msg data.Mail
 		return "", err
 	}
 
+	fmt.Println("1")
 	request.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
@@ -34,6 +35,8 @@ func (service *SubscriptionService) SendEmail(ctx context.Context, msg data.Mail
 	}
 	defer response.Body.Close()
 
+	fmt.Println("2")
+	fmt.Println(response.StatusCode)
 	// make sure we get back the right status code
 	if response.StatusCode != http.StatusAccepted {
 		return "", errors.New("error calling mail service")

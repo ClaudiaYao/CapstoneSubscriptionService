@@ -21,8 +21,12 @@ type SubscriptionService struct {
 }
 
 type AppConfiguration struct {
-	TokenExpireSecs int
-	ServiceHost     string
+	TokenExpireSecs                  int
+	ServicePort                      string
+	EmailServiceContainerName        string
+	PlaylistServiceContainerName     string
+	SubscriptionServiceContainerName string
+	LoginServiceContainerName        string
 }
 
 // this SubscriptionServiceDataDTO represents the data returned to the client
@@ -75,6 +79,8 @@ func (service *SubscriptionService) CreateSubscription(w http.ResponseWriter, r 
 	}
 
 	mailMsg := data.MailPayload{
+		From:    "test@example.com",
+		To:      "user@example.com",
 		Subject: "subscription is success.",
 		Message: "detailed information. TODO",
 	}

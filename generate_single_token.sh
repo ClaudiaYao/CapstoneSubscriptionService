@@ -3,7 +3,7 @@
 cd app
 cd domain
 cd auth 
-go test -v .
+go test run TestCreateJWT ./...
 cd ..
 cd ..
 cd ..

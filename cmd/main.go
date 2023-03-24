@@ -50,7 +50,7 @@ func main() {
 	}
 
 	srv := &http.Server{
-		Addr:    appCon.ServiceHost,
+		Addr:    appCon.ServicePort,
 		Handler: subService.Routes(),
 	}
 
@@ -62,15 +62,24 @@ func main() {
 
 func getConfig() *domain.AppConfiguration {
 
-	expireSec, err := strconv.Atoi(GoDotEnvVariable("TOKEN_EXPIRE_SECS"))
+	err := godotenv.Load(".env")
+
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+
+	expireSec, err := strconv.Atoi(os.Getenv("TOKEN_EXPIRE_SECS"))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	servicePort := GoDotEnvVariable("SERVICE_HOST")
 	return &domain.AppConfiguration{
-		TokenExpireSecs: expireSec,
-		ServiceHost:     servicePort,
+		TokenExpireSecs:                  expireSec,
+		ServicePort:                      os.Getenv("SERVICE_PORT"),
+		EmailServiceContainerName:        os.Getenv("MAIL_SERVICE"),
+		LoginServiceContainerName:        os.Getenv("LOGIN_SERVICE"),
+		PlaylistServiceContainerName:     os.Getenv("PLATLIST_SERVICE"),
+		SubscriptionServiceContainerName: os.Getenv("SUBSCRIPTION_SERVICE"),
 	}
 }
 
@@ -94,16 +103,6 @@ func openDB(dsn string) (*data.DataQuery, error) {
 
 // C: wrap the openDB function and provide retry mechanism
 func connectToDB() *data.DataQuery {
-
-	// host := goDotEnvVariable("DB_HOST")
-	// port := goDotEnvVariable("DB_PORT")
-	// user := goDotEnvVariable("DB_USER")
-	// password := goDotEnvVariable("DB_PASS")
-	// dbname := goDotEnvVariable("DB_NAME")
-
-	// dsn := fmt.Sprintf("host=%s port=%s user=%s "+
-	// 	"password=%s dbname=%s sslmode=disable",
-	// 	host, port, user, password, dbname)
 	dsn := os.Getenv("DSN")
 
 	println("debugging line:", dsn)
