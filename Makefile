@@ -61,5 +61,8 @@ build_subscription:
 	cd ../subscription-service && env GOOS=linux CGO_ENABLED=0 go build -o ${SUBSCRIPTION_BINARY} ./cmd
 	@echo "Done!"
 
-container_bridge:
+container-bridge:
 	bash create_docker_bridge.sh
+
+rm-bridge:
+	docker network rm multi-host-network

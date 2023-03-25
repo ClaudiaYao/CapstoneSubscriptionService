@@ -3,7 +3,6 @@ package domain
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -91,7 +90,6 @@ func (app *SubscriptionService) readJSON(w http.ResponseWriter, r *http.Request,
 		return err
 	}
 
-	fmt.Fprintf(w, "Person: %+v", data)
 	return nil
 
 }

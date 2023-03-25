@@ -71,11 +71,16 @@ func (service *SubscriptionService) CreateSubscription(w http.ResponseWriter, r 
 		return
 	}
 
-	subReqServiceDTO, err := service.InsertNewSubscriptionRecord(r.Context(), requestPayload)
+	subResServiceDTO, err := service.InsertNewSubscriptionRecord(r.Context(), requestPayload)
 
 	if err != nil {
 		service.errorJSON(w, errors.New("invalid query"), http.StatusBadRequest)
 		return
+	}
+
+	responsePayload := jsonResponse{
+		Error: false,
+		Data:  subResServiceDTO,
 	}
 
 	mailMsg := data.MailPayload{
@@ -88,14 +93,9 @@ func (service *SubscriptionService) CreateSubscription(w http.ResponseWriter, r 
 	toAddress, err := service.SendEmail(r.Context(), mailMsg)
 
 	if err != nil {
-		service.errorJSON(w, errors.New("email sending failure"), http.StatusBadRequest)
-		return
-	}
-
-	responsePayload := jsonResponse{
-		Error:   false,
-		Message: "subscription is created and mail sent to " + toAddress,
-		Data:    subReqServiceDTO,
+		responsePayload.Message = "subscription is created but mail fail to sent"
+	} else {
+		responsePayload.Message = "subscription is created and mail sent to " + toAddress
 	}
 
 	service.writeJSON(w, http.StatusAccepted, responsePayload)
@@ -117,7 +117,7 @@ func (service *SubscriptionService) CancelSubscription(w http.ResponseWriter, r 
 
 	responsePayload := jsonResponse{
 		Error:   false,
-		Message: fmt.Sprintf("subscription %s is cancelled", subscriptionID),
+		Message: fmt.Sprintf("subscription %s is cancelled successfully", subscriptionID),
 		Data:    CancelledDishes,
 	}
 
@@ -175,10 +175,21 @@ func (service *SubscriptionService) GetSubscriptionByID(w http.ResponseWriter, r
 		return
 	}
 
+	dishes, err := service.DBConnection.GetDishBySubscriptionID(r.Context(), id)
+
+	if err != nil {
+		service.errorJSON(w, errors.New("invalid query for the dish subscription table"), http.StatusBadRequest)
+		return
+	}
+	subResServiceDTO := SubscriptionServiceResponseDataDTO{
+		Subscription: subscription,
+		DishIncluded: dishes,
+	}
+
 	responsePayload := jsonResponse{
 		Error:   false,
-		Message: "subscription are retrieved",
-		Data:    subscription,
+		Message: "subscriptions are retrieved",
+		Data:    subResServiceDTO,
 	}
 
 	service.writeJSON(w, http.StatusAccepted, responsePayload)
@@ -195,10 +206,26 @@ func (service *SubscriptionService) GetSubscriptionByUserID(w http.ResponseWrite
 		return
 	}
 
+	subResponseDTOs := []SubscriptionServiceResponseDataDTO{}
+
+	for _, sub := range subscriptions {
+		dishes, err := service.DBConnection.GetDishBySubscriptionID(r.Context(), sub.ID)
+
+		if err != nil {
+			service.errorJSON(w, errors.New("invalid query for the dish subscription table"), http.StatusBadRequest)
+			return
+		}
+		subResServiceDTO := SubscriptionServiceResponseDataDTO{
+			Subscription: sub,
+			DishIncluded: dishes,
+		}
+		subResponseDTOs = append(subResponseDTOs, subResServiceDTO)
+	}
+
 	responsePayload := jsonResponse{
 		Error:   false,
 		Message: "subscriptions are retrieved",
-		Data:    subscriptions,
+		Data:    subResponseDTOs,
 	}
 
 	service.writeJSON(w, http.StatusAccepted, responsePayload)
