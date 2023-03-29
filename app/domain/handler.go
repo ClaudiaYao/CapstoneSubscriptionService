@@ -32,7 +32,7 @@ type AppConfiguration struct {
 // this SubscriptionServiceDataDTO represents the data returned to the client
 type SubscriptionServiceResponseDataDTO struct {
 	Subscription data.Subscription
-	DishIncluded []data.SubscriptionDish
+	DishIncluded []data.SubscriptionDishDTO
 }
 
 type SubscriptionServiceRequestDataDTO struct {
@@ -41,19 +41,22 @@ type SubscriptionServiceRequestDataDTO struct {
 }
 
 type SubscriptionRequested struct {
-	UserID     string    `json:"userID"`
-	PlaylistID string    `json:"playlistID"`
-	Customized bool      `json:"customized"`
-	Frequency  string    `json:"frequency"`
-	StartDate  time.Time `json:"startDate"`
-	EndDate    time.Time `json:"endDate,omitempty"`
+	UserID          string    `json:"userID"`
+	PlaylistID      string    `json:"playlistID"`
+	Customized      bool      `json:"customized"`
+	Frequency       string    `json:"frequency"`
+	StartDate       time.Time `json:"startDate"`
+	EndDate         time.Time `json:"endDate,omitempty"`
+	ReceiverName    string    `json:"receiverName"`
+	ReceiverContact string    `json:"receiverContact"`
 }
 
 type SubscriptionDishRequested struct {
-	DishID       string    `json:"dishID"`
-	ScheduleTime time.Time `json:"scheduleTime"`
-	Frequency    string    `json:"frequency"`
-	Note         string    `json:"Note,omitempty"`
+	DishID       string     `json:"dishID"`
+	ScheduleTime time.Time  `json:"scheduleTime"`
+	Frequency    string     `json:"frequency"`
+	DishOptions  [][]string `json:"dishOptions"`
+	Note         string     `json:"Note,omitempty"`
 }
 
 // C: this PlaylistService is responsible for transfering information request/response
@@ -74,7 +77,7 @@ func (service *SubscriptionService) CreateSubscription(w http.ResponseWriter, r 
 	subResServiceDTO, err := service.InsertNewSubscriptionRecord(r.Context(), requestPayload)
 
 	if err != nil {
-		service.errorJSON(w, errors.New("invalid query"), http.StatusBadRequest)
+		service.errorJSON(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -133,10 +136,12 @@ func (service *SubscriptionService) GetDishBySubscriptionID(w http.ResponseWrite
 		return
 	}
 
+	dishesDTO := convertDishToDTO(&subscriptionDishes)
+
 	responsePayload := jsonResponse{
 		Error:   false,
 		Message: "dishes are retrieved",
-		Data:    subscriptionDishes,
+		Data:    *dishesDTO,
 	}
 
 	service.writeJSON(w, http.StatusAccepted, responsePayload)
@@ -181,9 +186,11 @@ func (service *SubscriptionService) GetSubscriptionByID(w http.ResponseWriter, r
 		service.errorJSON(w, errors.New("invalid query for the dish subscription table"), http.StatusBadRequest)
 		return
 	}
+
+	dishesDTO := convertDishToDTO(&dishes)
 	subResServiceDTO := SubscriptionServiceResponseDataDTO{
 		Subscription: subscription,
-		DishIncluded: dishes,
+		DishIncluded: *dishesDTO,
 	}
 
 	responsePayload := jsonResponse{
@@ -215,9 +222,11 @@ func (service *SubscriptionService) GetSubscriptionByUserID(w http.ResponseWrite
 			service.errorJSON(w, errors.New("invalid query for the dish subscription table"), http.StatusBadRequest)
 			return
 		}
+
+		dishesDTO := convertDishToDTO(&dishes)
 		subResServiceDTO := SubscriptionServiceResponseDataDTO{
 			Subscription: sub,
-			DishIncluded: dishes,
+			DishIncluded: *dishesDTO,
 		}
 		subResponseDTOs = append(subResponseDTOs, subResServiceDTO)
 	}

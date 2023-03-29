@@ -52,7 +52,7 @@ func (q *Queries) ChangeDishDeliveryStatus(ctx context.Context, arg ChangeDishDe
 
 const changeSubscriptionStatus = `-- name: ChangeSubscriptionStatus :one
 update subscription set status = $1 where id = $2
-returning id, user_id, playlist_id, customized, status, frequency, start_date, end_date
+returning id, user_id, playlist_id, customized, status, frequency, start_date, end_date, receiver_name, receiver_contact
 `
 
 type ChangeSubscriptionStatusParams struct {
@@ -72,6 +72,8 @@ func (q *Queries) ChangeSubscriptionStatus(ctx context.Context, arg ChangeSubscr
 		&i.Frequency,
 		&i.StartDate,
 		&i.EndDate,
+		&i.ReceiverName,
+		&i.ReceiverContact,
 	)
 	return i, err
 }
@@ -111,7 +113,7 @@ func (q *Queries) GetDisDeliveryCondition(ctx context.Context, subscriptionDishI
 }
 
 const getDishBySubscriptionID = `-- name: GetDishBySubscriptionID :many
-select id, dish_id, subscription_id, schedule_time, frequency, note FROM subscription_dish where subscription_id = $1
+select id, dish_id, subscription_id, schedule_time, frequency, dish_options, note FROM subscription_dish where subscription_id = $1
 `
 
 func (q *Queries) GetDishBySubscriptionID(ctx context.Context, subscriptionID string) ([]SubscriptionDish, error) {
@@ -129,6 +131,7 @@ func (q *Queries) GetDishBySubscriptionID(ctx context.Context, subscriptionID st
 			&i.SubscriptionID,
 			&i.ScheduleTime,
 			&i.Frequency,
+			&i.DishOptions,
 			&i.Note,
 		); err != nil {
 			return nil, err
@@ -145,7 +148,7 @@ func (q *Queries) GetDishBySubscriptionID(ctx context.Context, subscriptionID st
 }
 
 const getSubscriptionByID = `-- name: GetSubscriptionByID :one
-select id, user_id, playlist_id, customized, status, frequency, start_date, end_date FROM subscription where id = $1
+select id, user_id, playlist_id, customized, status, frequency, start_date, end_date, receiver_name, receiver_contact FROM subscription where id = $1
 `
 
 func (q *Queries) GetSubscriptionByID(ctx context.Context, id string) (Subscription, error) {
@@ -160,12 +163,14 @@ func (q *Queries) GetSubscriptionByID(ctx context.Context, id string) (Subscript
 		&i.Frequency,
 		&i.StartDate,
 		&i.EndDate,
+		&i.ReceiverName,
+		&i.ReceiverContact,
 	)
 	return i, err
 }
 
 const getSubscriptionByUserID = `-- name: GetSubscriptionByUserID :many
-select id, user_id, playlist_id, customized, status, frequency, start_date, end_date FROM subscription where user_id = $1
+select id, user_id, playlist_id, customized, status, frequency, start_date, end_date, receiver_name, receiver_contact FROM subscription where user_id = $1
 `
 
 func (q *Queries) GetSubscriptionByUserID(ctx context.Context, userID string) ([]Subscription, error) {
@@ -186,6 +191,8 @@ func (q *Queries) GetSubscriptionByUserID(ctx context.Context, userID string) ([
 			&i.Frequency,
 			&i.StartDate,
 			&i.EndDate,
+			&i.ReceiverName,
+			&i.ReceiverContact,
 		); err != nil {
 			return nil, err
 		}
@@ -239,9 +246,9 @@ func (q *Queries) InsertDishDelivery(ctx context.Context, arg InsertDishDelivery
 
 const insertDishes = `-- name: InsertDishes :one
 insert into subscription_dish ("id", "dish_id", "subscription_id",
-  "schedule_time", "frequency", "note")
-  values ($1, $2, $3, $4, $5, $6)
-  returning id, dish_id, subscription_id, schedule_time, frequency, note
+  "schedule_time", "frequency", "dish_options", "note")
+  values ($1, $2, $3, $4, $5, $6, $7)
+  returning id, dish_id, subscription_id, schedule_time, frequency, dish_options, note
 `
 
 type InsertDishesParams struct {
@@ -250,6 +257,7 @@ type InsertDishesParams struct {
 	SubscriptionID string         `json:"subscriptionID"`
 	ScheduleTime   interface{}    `json:"scheduleTime"`
 	Frequency      string         `json:"frequency"`
+	DishOptions    string         `json:"dishOptions"`
 	Note           sql.NullString `json:"note"`
 }
 
@@ -260,6 +268,7 @@ func (q *Queries) InsertDishes(ctx context.Context, arg InsertDishesParams) (Sub
 		arg.SubscriptionID,
 		arg.ScheduleTime,
 		arg.Frequency,
+		arg.DishOptions,
 		arg.Note,
 	)
 	var i SubscriptionDish
@@ -269,6 +278,7 @@ func (q *Queries) InsertDishes(ctx context.Context, arg InsertDishesParams) (Sub
 		&i.SubscriptionID,
 		&i.ScheduleTime,
 		&i.Frequency,
+		&i.DishOptions,
 		&i.Note,
 	)
 	return i, err
@@ -277,19 +287,21 @@ func (q *Queries) InsertDishes(ctx context.Context, arg InsertDishesParams) (Sub
 const insertSubscription = `-- name: InsertSubscription :one
 insert into subscription ("id", "user_id", "playlist_id",
   "customized", "status", "frequency", "start_date",
-  "end_date" ) values ($1, $2, $3, $4, $5, $6, $7, $8)
-  returning id, user_id, playlist_id, customized, status, frequency, start_date, end_date
+  "end_date", "receiver_name", "receiver_contact") values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+  returning id, user_id, playlist_id, customized, status, frequency, start_date, end_date, receiver_name, receiver_contact
 `
 
 type InsertSubscriptionParams struct {
-	ID         string      `json:"id"`
-	UserID     string      `json:"userID"`
-	PlaylistID string      `json:"playlistID"`
-	Customized bool        `json:"customized"`
-	Status     string      `json:"status"`
-	Frequency  string      `json:"frequency"`
-	StartDate  interface{} `json:"startDate"`
-	EndDate    interface{} `json:"endDate"`
+	ID              string      `json:"id"`
+	UserID          string      `json:"userID"`
+	PlaylistID      string      `json:"playlistID"`
+	Customized      bool        `json:"customized"`
+	Status          string      `json:"status"`
+	Frequency       string      `json:"frequency"`
+	StartDate       interface{} `json:"startDate"`
+	EndDate         interface{} `json:"endDate"`
+	ReceiverName    string      `json:"receiverName"`
+	ReceiverContact string      `json:"receiverContact"`
 }
 
 func (q *Queries) InsertSubscription(ctx context.Context, arg InsertSubscriptionParams) (Subscription, error) {
@@ -302,6 +314,8 @@ func (q *Queries) InsertSubscription(ctx context.Context, arg InsertSubscription
 		arg.Frequency,
 		arg.StartDate,
 		arg.EndDate,
+		arg.ReceiverName,
+		arg.ReceiverContact,
 	)
 	var i Subscription
 	err := row.Scan(
@@ -313,6 +327,8 @@ func (q *Queries) InsertSubscription(ctx context.Context, arg InsertSubscription
 		&i.Frequency,
 		&i.StartDate,
 		&i.EndDate,
+		&i.ReceiverName,
+		&i.ReceiverContact,
 	)
 	return i, err
 }

@@ -18,14 +18,16 @@ type DishDelivery struct {
 }
 
 type Subscription struct {
-	ID         string      `json:"id"`
-	UserID     string      `json:"userID"`
-	PlaylistID string      `json:"playlistID"`
-	Customized bool        `json:"customized"`
-	Status     string      `json:"status"`
-	Frequency  string      `json:"frequency"`
-	StartDate  interface{} `json:"startDate"`
-	EndDate    interface{} `json:"endDate"`
+	ID              string      `json:"id"`
+	UserID          string      `json:"userID"`
+	PlaylistID      string      `json:"playlistID"`
+	Customized      bool        `json:"customized"`
+	Status          string      `json:"status"`
+	Frequency       string      `json:"frequency"`
+	StartDate       interface{} `json:"startDate"`
+	EndDate         interface{} `json:"endDate"`
+	ReceiverName    string      `json:"receiverName"`
+	ReceiverContact string      `json:"receiverContact"`
 }
 
 type SubscriptionDish struct {
@@ -34,5 +36,6 @@ type SubscriptionDish struct {
 	SubscriptionID string         `json:"subscriptionID"`
 	ScheduleTime   interface{}    `json:"scheduleTime"`
 	Frequency      string         `json:"frequency"`
+	DishOptions    string         `json:"dishOptions"`
 	Note           sql.NullString `json:"note"`
 }

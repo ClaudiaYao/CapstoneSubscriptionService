@@ -29,6 +29,7 @@ down:
 	@echo "Done!"
 
 migrateup: 
+#migrate -path resources/database/migration/ -database "postgresql://postgres:password@localhost:5433/subscription?sslmode=disable" -verbose up
 	goose -dir resources/database/migration/ postgres "${PSQL_CONN}" up
 
 migratedown:

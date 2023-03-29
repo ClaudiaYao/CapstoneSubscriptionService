@@ -46,7 +46,7 @@ func (dq *DataQuery) GetDishDeliveryCondition(ctx context.Context, subscriptionD
 	return items, nil
 }
 
-const getDishBySubscriptionID = `select id, dish_id, subscription_id, schedule_time, frequency, 
+const getDishBySubscriptionID = `select id, dish_id, subscription_id, schedule_time, frequency, dish_options, 
 note FROM subscription_dish where subscription_id = $1`
 
 func (dq *DataQuery) GetDishBySubscriptionID(ctx context.Context, subscriptionID string) ([]SubscriptionDish, error) {
@@ -64,6 +64,7 @@ func (dq *DataQuery) GetDishBySubscriptionID(ctx context.Context, subscriptionID
 			&i.SubscriptionID,
 			&i.ScheduleTime,
 			&i.Frequency,
+			&i.DishOptions,
 			&i.Note,
 		); err != nil {
 			return nil, err
@@ -80,7 +81,7 @@ func (dq *DataQuery) GetDishBySubscriptionID(ctx context.Context, subscriptionID
 }
 
 const getSubscriptionByID = `select id, user_id, playlist_id, customized, status, frequency, 
-start_date, end_date FROM subscription where id = $1`
+start_date, end_date, receiver_name, receiver_contact FROM subscription where id = $1`
 
 func (dq *DataQuery) GetSubscriptionByID(ctx context.Context, id string) (Subscription, error) {
 	row := dq.DBConn.QueryRowContext(ctx, getSubscriptionByID, id)
@@ -94,12 +95,14 @@ func (dq *DataQuery) GetSubscriptionByID(ctx context.Context, id string) (Subscr
 		&i.Frequency,
 		&i.StartDate,
 		&i.EndDate,
+		&i.ReceiverName,
+		&i.ReceiverContact,
 	)
 	return i, err
 }
 
 const getSubscriptionByUserID = `select id, user_id, playlist_id, customized, status, frequency, 
-start_date, end_date FROM subscription where user_id = $1`
+start_date, end_date, receiver_name, receiver_contact FROM subscription where user_id = $1`
 
 func (dq *DataQuery) GetSubscriptionByUserID(ctx context.Context, userID string) ([]Subscription, error) {
 	rows, err := dq.DBConn.QueryContext(ctx, getSubscriptionByUserID, userID)
@@ -119,6 +122,8 @@ func (dq *DataQuery) GetSubscriptionByUserID(ctx context.Context, userID string)
 			&i.Frequency,
 			&i.StartDate,
 			&i.EndDate,
+			&i.ReceiverName,
+			&i.ReceiverContact,
 		); err != nil {
 			return nil, err
 		}
@@ -160,17 +165,18 @@ func (dq *DataQuery) InsertDishDelivery(ctx context.Context, arg DishDelivery) (
 }
 
 const insertDishes = `insert into subscription_dish ("id", "dish_id", "subscription_id",
-  "schedule_time", "frequency", "note")
-  values ($1, $2, $3, $4, $5, $6)
-  returning id, dish_id, subscription_id, schedule_time, frequency, note`
+  "schedule_time", "frequency", "dish_options", "note")
+  values ($1, $2, $3, $4, $5, $6, $7)
+  returning id, dish_id, subscription_id, schedule_time, frequency, dish_options, note`
 
-func (dq *DataQuery) InsertDishes(ctx context.Context, arg SubscriptionDish) (string, error) {
-	row := dq.DBConn.QueryRowContext(ctx, insertDishes,
+func (q *DataQuery) InsertDishes(ctx context.Context, arg SubscriptionDish) (string, error) {
+	row := q.DBConn.QueryRowContext(ctx, insertDishes,
 		arg.ID,
 		arg.DishID,
 		arg.SubscriptionID,
 		arg.ScheduleTime,
 		arg.Frequency,
+		arg.DishOptions,
 		arg.Note,
 	)
 	var i SubscriptionDish
@@ -180,6 +186,7 @@ func (dq *DataQuery) InsertDishes(ctx context.Context, arg SubscriptionDish) (st
 		&i.SubscriptionID,
 		&i.ScheduleTime,
 		&i.Frequency,
+		&i.DishOptions,
 		&i.Note,
 	)
 	return i.ID, err
@@ -187,12 +194,12 @@ func (dq *DataQuery) InsertDishes(ctx context.Context, arg SubscriptionDish) (st
 
 const insertSubscription = `insert into subscription ("id", "user_id", "playlist_id",
   "customized", "status", "frequency", "start_date",
-  "end_date" ) values ($1, $2, $3, $4, $5, $6, $7, $8)
-  returning id, user_id, playlist_id, customized, status, frequency, start_date, end_date
+  "end_date", "receiver_name", "receiver_contact") values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+  returning id, user_id, playlist_id, customized, status, frequency, start_date, end_date, receiver_name, receiver_contact
 `
 
-func (dq *DataQuery) InsertSubscription(ctx context.Context, arg Subscription) (string, error) {
-	row := dq.DBConn.QueryRowContext(ctx, insertSubscription,
+func (q *DataQuery) InsertSubscription(ctx context.Context, arg Subscription) (Subscription, error) {
+	row := q.DBConn.QueryRowContext(ctx, insertSubscription,
 		arg.ID,
 		arg.UserID,
 		arg.PlaylistID,
@@ -201,6 +208,8 @@ func (dq *DataQuery) InsertSubscription(ctx context.Context, arg Subscription) (
 		arg.Frequency,
 		arg.StartDate,
 		arg.EndDate,
+		arg.ReceiverName,
+		arg.ReceiverContact,
 	)
 	var i Subscription
 	err := row.Scan(
@@ -212,8 +221,10 @@ func (dq *DataQuery) InsertSubscription(ctx context.Context, arg Subscription) (
 		&i.Frequency,
 		&i.StartDate,
 		&i.EndDate,
+		&i.ReceiverName,
+		&i.ReceiverContact,
 	)
-	return i.ID, err
+	return i, err
 }
 
 const changeDishDeliveryStatus = `update dish_delivery set status = $1 where subscription_dish_id = $2 and delivery_time is NULL
@@ -252,7 +263,7 @@ func (dq *DataQuery) ChangeDishDeliveryStatus(ctx context.Context, toStatus stri
 
 const changeSubscriptionStatus = `
 update subscription set status = $1 where id = $2
-returning id, user_id, playlist_id, customized, status, frequency, start_date, end_date
+returning id, user_id, playlist_id, customized, status, frequency, start_date, end_date, receiver_name, receiver_contact
 `
 
 func (dq *DataQuery) ChangeSubscriptionStatus(ctx context.Context, toStatus, subscriptionID string) (Subscription, error) {
@@ -267,6 +278,8 @@ func (dq *DataQuery) ChangeSubscriptionStatus(ctx context.Context, toStatus, sub
 		&sub.Frequency,
 		&sub.StartDate,
 		&sub.EndDate,
+		&sub.ReceiverName,
+		&sub.ReceiverContact,
 	)
 	return sub, err
 }

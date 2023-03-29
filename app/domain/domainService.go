@@ -25,7 +25,6 @@ func (service *SubscriptionService) SendEmail(ctx context.Context, msg data.Mail
 		return "", err
 	}
 
-	fmt.Println("1")
 	request.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
@@ -51,26 +50,35 @@ func (service *SubscriptionService) InsertNewSubscriptionRecord(ctx context.Cont
 
 	// this ensures that every time posting the request to create subscription, the id will be different.
 	subInfo := data.Subscription{
-		ID:         "Sub" + shortuuid.New(),
-		UserID:     subReq.UserID,
-		PlaylistID: subReq.PlaylistID,
-		Customized: subReq.Customized,
-		Status:     "Active",
-		Frequency:  subReq.Frequency,
-		StartDate:  subReq.StartDate,
-		EndDate:    subReq.EndDate,
+		ID:              "Sub" + shortuuid.New(),
+		UserID:          subReq.UserID,
+		PlaylistID:      subReq.PlaylistID,
+		Customized:      subReq.Customized,
+		Status:          "Active",
+		Frequency:       subReq.Frequency,
+		StartDate:       subReq.StartDate,
+		EndDate:         subReq.EndDate,
+		ReceiverName:    subReq.ReceiverName,
+		ReceiverContact: subReq.ReceiverContact,
 	}
 
 	dishIncluded := payload.DishIncluded
 	dishes := []data.SubscriptionDish{}
 
 	for _, dishInfo := range dishIncluded {
+		optionB, err := json.Marshal(dishInfo.DishOptions)
+		if err != nil {
+			return nil, err
+		}
+
+		fmt.Println(string(optionB))
 		dish := data.SubscriptionDish{
 			ID:             "SDish" + shortuuid.New(),
 			DishID:         dishInfo.DishID,
 			SubscriptionID: subInfo.ID,
 			ScheduleTime:   dishInfo.ScheduleTime,
 			Frequency:      dishInfo.Frequency,
+			DishOptions:    string(optionB),
 			Note:           dishInfo.Note,
 		}
 		dishes = append(dishes, dish)
@@ -106,9 +114,10 @@ func (service *SubscriptionService) InsertNewSubscriptionRecord(ctx context.Cont
 
 	}
 
+	dishesDTO := convertDishToDTO(&dishes)
 	response := &SubscriptionServiceResponseDataDTO{
 		Subscription: subInfo,
-		DishIncluded: dishes,
+		DishIncluded: *dishesDTO,
 	}
 	return response, err
 
@@ -152,4 +161,24 @@ func nextDelivery(frequency string, thisDelivery time.Time) time.Time {
 		return thisDelivery.AddDate(0, 1, 0)
 	}
 	return thisDelivery.AddDate(0, 0, 1)
+}
+
+func convertDishToDTO(dishes *[]data.SubscriptionDish) *[]data.SubscriptionDishDTO {
+
+	dishesDTO := []data.SubscriptionDishDTO{}
+	for _, dish := range *dishes {
+		options := [][]string{}
+		json.Unmarshal([]byte(dish.DishOptions), &options)
+		dishDTO := data.SubscriptionDishDTO{
+			ID:             dish.ID,
+			DishID:         dish.DishID,
+			SubscriptionID: dish.SubscriptionID,
+			ScheduleTime:   dish.ScheduleTime,
+			Frequency:      dish.Frequency,
+			DishOptions:    options,
+			Note:           dish.Note,
+		}
+		dishesDTO = append(dishesDTO, dishDTO)
+	}
+	return &dishesDTO
 }

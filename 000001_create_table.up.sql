@@ -7,7 +7,7 @@ CREATE TABLE "subscription" (
   "status" varchar(20) NOT NULL,
   "frequency" varchar NOT NULL,
   "start_date" datetime NOT NULL,
-  "end_date" datetime NOT NULL,
+  "end_date" datetime,
   "receiver_name" varchar NOT NULL,
   "receiver_contact" varchar NOT NULL
 );

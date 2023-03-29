@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
@@ -32,17 +33,16 @@ type address struct {
 
 func main() {
 	categoryCodes := generateCategory()
-	restaurantIDs := generateRestaurant()
-	// since Dish table has a foreign reference key to RestaurantID, so we
-	// pass restaurantIDs to the dish generation function
+	restaurantIDs := generateRestaurant(categoryCodes)
+	// // since Dish table has a foreign reference key to RestaurantID, so we
+	// // pass restaurantIDs to the dish generation function
 	dishIDs := generateDish(restaurantIDs)
 	playlistIDs := generatePlaylist(categoryCodes)
 
 	playlistDishRelation := generatePlaylistDishRelation(playlistIDs, dishIDs)
-
-	// when generating subscription data, subscriptionDish file and DishDelivery file is gnerated
-	// together because they are closely related and need to refer to the data from playlist
-	// service
+	// // when generating subscription data, subscriptionDish file and DishDelivery file is gnerated
+	// // together because they are closely related and need to refer to the data from playlist
+	// // service
 	subscriptionIDs := generateSubscription(playlistIDs, playlistDishRelation, dishIDs)
 
 	keepData(categoryCodes, restaurantIDs, dishIDs, playlistIDs, playlistDishRelation, subscriptionIDs)
@@ -118,12 +118,6 @@ func extractIDs() (allIDInfo, error) {
 		i += 1
 
 	}
-
-	// fmt.Println(ids.restaurants)
-	// fmt.Println(ids.categories)
-	// fmt.Println(ids.dishes)
-	// fmt.Println(ids.playlists)
-	// fmt.Println(ids.subscriptions)
 
 	readFileRel, err := os.Open("Generated/playlistDishRel.txt")
 	if err != nil {
@@ -216,9 +210,27 @@ func generateSubscriptionDishes(subscriptionID string, startDate time.Time, endD
 		scheduleTime := startDate.AddDate(0, 0, rand.Intn(3))
 		note := noteChoice[rand.Intn(len(noteChoice))]
 
+		var dishOptions = make([][]string, 2)
+		if rand.Intn(2) < 1 {
+			dishOptions = [][]string{
+				{"Mentaico Source", "Yes"},
+				{"Wasabi", "No"},
+			}
+		} else {
+			dishOptions = [][]string{
+				{"More source", "No"},
+				{"Pepper and Chili", "No"},
+			}
+		}
+
+		optionsB, err := json.Marshal(dishOptions)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		new_text := id + "|" + dishID + "|" + subscriptionID + "|" +
 			scheduleTime.Format(time.RFC3339) +
-			"|" + frequency + "|" + note
+			"|" + frequency + "|" + string(optionsB) + "|" + note
 
 		nextTime := scheduleTime
 		for nextTime.Before(endDate) {
@@ -226,7 +238,7 @@ func generateSubscriptionDishes(subscriptionID string, startDate time.Time, endD
 			nextTime = nextDelivery(frequency, nextTime)
 		}
 
-		_, err := write_f.WriteString(new_text + "\n")
+		_, err = write_f.WriteString(new_text + "\n")
 		if err != nil {
 			log.Fatal("error occurs when writing to file:", err)
 		}
@@ -264,8 +276,8 @@ func generateSubscription(playlistIDs []string, playlistDishRelations map[string
 	statusInfo := []string{
 		"Active",
 		"Cancelled",
-		"Pause",
-		"Finish",
+		"Pending",
+		"Expired",
 	}
 
 	frequencyChoices := []string{
@@ -281,6 +293,8 @@ func generateSubscription(playlistIDs []string, playlistDishRelations map[string
 
 	subscriptionIDs := []string{}
 
+	names := []string{"Tody Liang", "Jone Tew", "James"}
+
 	// Get each playlist id and then form the table content
 	for _, playlistID := range playlistIDs {
 		chosen := rand.Intn(10)
@@ -293,19 +307,23 @@ func generateSubscription(playlistIDs []string, playlistDishRelations map[string
 			status := statusInfo[rand.Intn(len(statusInfo))]
 			startDate := time.Now().AddDate(0, 0, -rand.Intn(15))
 			endDate := startDate.AddDate(0, 0, 7*rand.Intn(3))
+			receiverName := names[rand.Intn(len(names))]
+			receiverContact := strconv.Itoa(80000000 + rand.Intn(200000))
 
 			new_text := ""
 			if customized == "false" {
 				new_text = id + "|" + userID + "|" + playlistID + "|" +
 					customized + "|" + status + "|" + frequency + "|" + startDate.Format(time.RFC3339) +
-					"|" + endDate.Format(time.RFC3339)
+					"|" + endDate.Format(time.RFC3339) + "|" + receiverName +
+					"|" + receiverContact
 
 				generateSubscriptionDishes(id, startDate, endDate, frequency, playlistDishRelations[playlistID])
 
 			} else {
 				new_text = id + "|" + userID + "|" + "(empty)" + "|" +
 					customized + "|" + status + "|" + frequency + "|" + startDate.Format(time.RFC3339) +
-					"|" + endDate.Format(time.RFC3339)
+					"|" + endDate.Format(time.RFC3339) + "|" + receiverName +
+					"|" + receiverContact
 
 				randomDishes := []string{}
 				for i := 0; i < rand.Intn(5); i++ {
@@ -325,6 +343,333 @@ func generateSubscription(playlistIDs []string, playlistDishRelations map[string
 	}
 	return subscriptionIDs
 }
+
+// func generatePlaylist(categoryCodes []string) []string {
+
+// 	read_f, err := os.Open("Initial/playlist.txt")
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	// remember to close the file at the end of the program
+// 	defer read_f.Close()
+
+// 	write_f, err := os.Create("Generated/playlist.txt")
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	// remember to close the file at the end of the program
+// 	defer write_f.Close()
+
+// 	// read the file line by line using scanner
+// 	scanner := bufio.NewScanner(read_f)
+// 	categoryNumber := len(categoryCodes)
+
+// 	dietaryInfo := []string{
+// 		"perferendis voluptatibus veniam",
+// 		"veniam ut excepturi nulla conse",
+// 		"fugit, amet quia nulla culpa",
+// 		"nulla consequatur natus tempore officiis",
+// 	}
+// 	dietaryNumber := len(dietaryInfo)
+
+// 	statusInfo := []string{
+// 		"Active",
+// 		"Expired",
+// 		"Pending",
+// 	}
+
+// 	playlistIDs := []string{}
+
+// 	// Get each playlist name and then form the table content
+// 	for scanner.Scan() {
+// 		id := "Play" + shortuuid.New()
+// 		// do something with a line
+// 		name := scanner.Text()
+// 		categoryCode := categoryCodes[rand.Intn(categoryNumber)]
+// 		dietary := dietaryInfo[rand.Intn(dietaryNumber)]
+// 		statusInfo := statusInfo[rand.Intn(len(statusInfo))]
+// 		startDateRandom := time.Now().AddDate(0, 0, rand.Intn(60)-30)
+// 		startDate := startDateRandom.Format("2006-01-02")
+// 		endDateRandom := startDateRandom.AddDate(0, 2, 15)
+// 		end_date := endDateRandom.Format("2006-01-02")
+// 		popularity := 1 + rand.Intn(5)
+
+// 		new_text := id + "|" + name + "|" + categoryCode + "|" +
+// 			dietary + "|" + statusInfo + "|" + startDate +
+// 			"|" + end_date + "|" + strconv.Itoa(popularity)
+
+// 		_, err := write_f.WriteString(new_text + "\n")
+// 		if err != nil {
+// 			log.Fatal("error occurs when writing to file:", err)
+// 		}
+// 		playlistIDs = append(playlistIDs, id)
+
+// 	}
+
+// 	if err := scanner.Err(); err != nil {
+// 		log.Fatal(err)
+// 	}
+
+// 	return playlistIDs
+
+// }
+
+// func generatePlaylistDishRelation(playlistIDs []string, dishIDs []string) map[string][]string {
+
+// 	write_f, err := os.Create("Generated/playlist_dish.txt")
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	// remember to close the file at the end of the program
+// 	defer write_f.Close()
+
+// 	// read the file line by line using scanner
+
+// 	totalDish := len(dishIDs)
+// 	if totalDish < 8 {
+// 		fmt.Println("too less dishes in the database.")
+// 	}
+
+// 	playlistDishRelation := map[string][]string{}
+
+// 	// Get each playlist name and then form the table content
+// 	for _, playlistID := range playlistIDs {
+
+// 		// do something with a line
+
+// 		dishNum := 4 + rand.Intn(6)
+// 		chosen := 0
+
+// 		dishes := []string{}
+
+// 		for chosen < dishNum {
+// 			id := "PD" + shortuuid.New()
+// 			dishID := dishIDs[rand.Intn(totalDish)]
+// 			new_text := id + "|" + dishID + "|" + playlistID
+
+// 			_, err := write_f.WriteString(new_text + "\n")
+// 			if err != nil {
+// 				log.Fatal("error occurs when writing to file:", err)
+// 			}
+// 			dishes = append(dishes, dishID)
+// 			chosen += 1
+
+// 		}
+// 		playlistDishRelation[playlistID] = dishes
+
+// 	}
+// 	return playlistDishRelation
+// }
+
+// func generateDish(restaurantIDs []string) []string {
+
+// 	read_f, err := os.Open("Initial/dish.txt")
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	// remember to close the file at the end of the program
+// 	defer read_f.Close()
+
+// 	write_f, err := os.Create("Generated/dish.txt")
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	// remember to close the file at the end of the program
+// 	defer write_f.Close()
+
+// 	// read the file line by line using scanner
+// 	scanner := bufio.NewScanner(read_f)
+// 	restaurantNumber := len(restaurantIDs)
+// 	dishIDs := []string{}
+
+// 	cuisineStyles := []string{
+// 		"perferendis voluptatibus veniam",
+// 		"veniam ut excepturi nulla conse",
+// 		"fugit, amet quia nulla culpa",
+// 		"nulla consequatur natus tempore officiis",
+// 	}
+// 	cuisineStyleNumber := len(cuisineStyles)
+
+// 	ingredients := []string{
+// 		"voluptatibus, veniam",
+// 		"veniam, ut, excepturi",
+// 		"fugit, amet quia, nulla",
+// 		"consequatur, natus, tempore, officiis",
+// 	}
+// 	ingredientNumber := len(ingredients)
+
+// 	// Get each dish name and then form the table content
+// 	for scanner.Scan() {
+// 		id := "Dish" + shortuuid.New()
+// 		// do something with a line
+// 		name := scanner.Text()
+// 		restaurantID := restaurantIDs[rand.Intn(restaurantNumber)]
+// 		comment := ""
+// 		price := fmt.Sprintf("%.2f", 4.0+rand.Float32()*20)
+// 		if err != nil {
+// 			fmt.Println(err)
+// 		}
+// 		cuisineStyle := cuisineStyles[rand.Intn(cuisineStyleNumber)]
+// 		ingredient := ingredients[rand.Intn(ingredientNumber)]
+
+// 		new_text := id + "|" + name + "|" + restaurantID + "|" +
+// 			price + "|" + cuisineStyle + "|" + ingredient +
+// 			"|" + comment
+
+// 		_, err := write_f.WriteString(new_text + "\n")
+// 		if err != nil {
+// 			log.Fatal("error occurs when writing to file:", err)
+// 		}
+// 		dishIDs = append(dishIDs, id)
+
+// 	}
+
+// 	if err := scanner.Err(); err != nil {
+// 		log.Fatal(err)
+// 	}
+
+// 	return dishIDs
+
+// }
+// func generateCategory() []string {
+// 	// open file
+// 	read_f, err := os.Open("Initial/category.txt")
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	// remember to close the file at the end of the program
+// 	defer read_f.Close()
+
+// 	// create file
+// 	features := []string{
+// 		"Temporibus aliquid, obcaecati soluta consequatur a veritatis ad omnis",
+// 		"Rerum sequi, earum delectus quidem tenetur est dicta exercitationem eius labore ipsa",
+// 		"Quibusdam perferendis voluptatibus veniam ut excepturi nulla",
+// 	}
+
+// 	write_f, err := os.Create("Generated/category.txt")
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	// remember to close the file
+// 	defer write_f.Close()
+
+// 	// read the file line by line using scanner
+// 	scanner := bufio.NewScanner(read_f)
+// 	feature_number := len(features)
+
+// 	categoryCodes := []string{}
+// 	for scanner.Scan() {
+// 		// do something with a line
+// 		line := scanner.Text()
+// 		code := line[:3]
+// 		new_text := code + "|" + line + "|" + features[rand.Intn(feature_number)]
+// 		_, err := write_f.WriteString(new_text + "\n")
+// 		if err != nil {
+// 			log.Fatal("error occurs when writing to file:", err)
+// 		}
+
+// 		categoryCodes = append(categoryCodes, code)
+
+// 	}
+
+// 	if err := scanner.Err(); err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	return categoryCodes
+// }
+
+// func GenerateAddress() []address {
+
+// 	var addresses []address
+// 	// read the file line by line using scanner
+// 	read_address, err := os.Open("Initial/address.txt")
+
+// 	if err != nil {
+// 		log.Fatal("read address file:", err)
+// 	}
+// 	defer read_address.Close()
+
+// 	scanner := bufio.NewScanner(read_address)
+
+// 	for scanner.Scan() {
+// 		line := scanner.Text()
+// 		adds := strings.Split(line, ",")
+// 		if len(adds) == 3 {
+// 			postal, err := strconv.Atoi(strings.TrimSpace(adds[2]))
+// 			if err != nil {
+// 				log.Fatal("postal code format is incorrect: ", err)
+// 			}
+// 			new_address := address{unit_number: strings.TrimSpace(adds[0]),
+// 				address_line1: strings.TrimSpace(adds[1]),
+// 				address_line2: "(empty)", postal_code: postal}
+
+// 			addresses = append(addresses, new_address)
+// 		} else if len(adds) == 4 {
+// 			postal, err := strconv.Atoi(strings.TrimSpace(adds[3]))
+// 			if err != nil {
+// 				log.Fatal("postal code format is incorrect.", err)
+// 			}
+// 			new_address := address{unit_number: strings.TrimSpace(adds[0]),
+// 				address_line1: strings.TrimSpace(adds[1]),
+// 				address_line2: strings.TrimSpace(adds[2]),
+// 				postal_code:   postal}
+
+// 			addresses = append(addresses, new_address)
+// 		} else {
+// 			log.Fatal("format of the address.txt is incorrect.")
+// 		}
+
+// 	}
+// 	return addresses
+// }
+
+// func generateRestaurant() []string {
+// 	addresses := GenerateAddress()
+
+// 	read_f, err := os.Open("Initial/restaurant.txt")
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	// remember to close the file at the end of the program
+// 	defer read_f.Close()
+
+// 	write_f, err := os.Create("Generated/restaurant.txt")
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	// remember to close the file at the end of the program
+// 	defer write_f.Close()
+
+// 	// read the file line by line using scanner
+// 	scanner := bufio.NewScanner(read_f)
+// 	address_number := len(addresses)
+
+// 	restaurantIDs := []string{}
+
+// 	for scanner.Scan() {
+// 		id := "RES" + shortuuid.New()
+// 		// do something with a line
+// 		name := scanner.Text()
+// 		restaurant := addresses[rand.Intn(address_number)]
+
+// 		new_text := id + "|" + name + "|" + restaurant.unit_number + "|" +
+// 			restaurant.address_line1 + "|" + restaurant.address_line2 + "|" + strconv.Itoa(restaurant.postal_code)
+
+// 		_, err := write_f.WriteString(new_text + "\n")
+// 		if err != nil {
+// 			log.Fatal("error occurs when writing to file:", err)
+// 		}
+// 		restaurantIDs = append(restaurantIDs, id)
+
+// 	}
+
+// 	if err := scanner.Err(); err != nil {
+// 		log.Fatal(err)
+// 	}
+
+// 	return restaurantIDs
+// }
 
 func generatePlaylist(categoryCodes []string) []string {
 
@@ -354,12 +699,6 @@ func generatePlaylist(categoryCodes []string) []string {
 	}
 	dietaryNumber := len(dietaryInfo)
 
-	statusInfo := []string{
-		"Active",
-		"Expired",
-		"Pending",
-	}
-
 	playlistIDs := []string{}
 
 	// Get each playlist name and then form the table content
@@ -369,12 +708,21 @@ func generatePlaylist(categoryCodes []string) []string {
 		name := scanner.Text()
 		categoryCode := categoryCodes[rand.Intn(categoryNumber)]
 		dietary := dietaryInfo[rand.Intn(dietaryNumber)]
-		statusInfo := statusInfo[rand.Intn(len(statusInfo))]
-		startDateRandom := time.Now().AddDate(0, 0, rand.Intn(60)-30)
+
+		startDateRandom := time.Now().AddDate(0, 0, rand.Intn(10)-10)
 		startDate := startDateRandom.Format("2006-01-02")
 		endDateRandom := startDateRandom.AddDate(0, 2, 15)
 		end_date := endDateRandom.Format("2006-01-02")
 		popularity := 1 + rand.Intn(5)
+
+		statusInfo := ""
+		if startDateRandom.After(time.Now()) {
+			statusInfo = "Pending"
+		} else if endDateRandom.Before(time.Now()) {
+			statusInfo = "Expired"
+		} else if endDateRandom.After(time.Now()) {
+			statusInfo = "Active"
+		}
 
 		new_text := id + "|" + name + "|" + categoryCode + "|" +
 			dietary + "|" + statusInfo + "|" + startDate +
@@ -443,6 +791,47 @@ func generatePlaylistDishRelation(playlistIDs []string, dishIDs []string) map[st
 	return playlistDishRelation
 }
 
+// func generatePlaylistDishRelation(playlistIDs []string, dishIDs []string) {
+
+// 	write_f, err := os.Create("Generated/playlist_dish.txt")
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	// remember to close the file at the end of the program
+// 	defer write_f.Close()
+
+// 	// read the file line by line using scanner
+
+// 	totalDish := len(dishIDs)
+// 	if totalDish < 8 {
+// 		fmt.Println("too less dishes in the database.")
+// 	}
+
+// 	// Get each playlist name and then form the table content
+// 	for _, playlistID := range playlistIDs {
+
+// 		// do something with a line
+
+// 		dishNum := 2 + rand.Intn(3)
+// 		chosen := 0
+
+// 		for chosen < dishNum {
+// 			id := "PD" + shortuuid.New()
+// 			dishID := dishIDs[rand.Intn(totalDish)]
+// 			new_text := id + "|" + dishID + "|" + playlistID
+
+// 			_, err := write_f.WriteString(new_text + "\n")
+// 			if err != nil {
+// 				log.Fatal("error occurs when writing to file:", err)
+// 			}
+
+// 			chosen += 1
+
+// 		}
+
+// 	}
+// }
+
 func generateDish(restaurantIDs []string) []string {
 
 	read_f, err := os.Open("Initial/dish.txt")
@@ -470,6 +859,7 @@ func generateDish(restaurantIDs []string) []string {
 		"fugit, amet quia nulla culpa",
 		"nulla consequatur natus tempore officiis",
 	}
+
 	cuisineStyleNumber := len(cuisineStyles)
 
 	ingredients := []string{
@@ -484,9 +874,12 @@ func generateDish(restaurantIDs []string) []string {
 	for scanner.Scan() {
 		id := "Dish" + shortuuid.New()
 		// do something with a line
-		name := scanner.Text()
+		str := strings.Split(scanner.Text(), ",")
+		name := strings.TrimSpace(str[0])
+		imageUrl := strings.TrimSpace(str[1])
+
 		restaurantID := restaurantIDs[rand.Intn(restaurantNumber)]
-		comment := ""
+		comment := "extra information"
 		price := fmt.Sprintf("%.2f", 4.0+rand.Float32()*20)
 		if err != nil {
 			fmt.Println(err)
@@ -494,11 +887,29 @@ func generateDish(restaurantIDs []string) []string {
 		cuisineStyle := cuisineStyles[rand.Intn(cuisineStyleNumber)]
 		ingredient := ingredients[rand.Intn(ingredientNumber)]
 
-		new_text := id + "|" + name + "|" + restaurantID + "|" +
-			price + "|" + cuisineStyle + "|" + ingredient +
-			"|" + comment
+		var dishOptions = make([][]string, 2)
+		if rand.Intn(2) < 1 {
+			dishOptions = [][]string{
+				{"Mentaico Source", "Yes", "No"},
+				{"Wasabi", "Yes", "No"},
+			}
+		} else {
+			dishOptions = [][]string{
+				{"More source", "Yes", "No"},
+				{"Pepper and Chili", "Yes", "No"},
+			}
+		}
 
-		_, err := write_f.WriteString(new_text + "\n")
+		optionsB, err := json.Marshal(dishOptions)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		new_text := id + "|" + name + "|" + restaurantID + "|" +
+			price + "|" + cuisineStyle + "|" + ingredient + "|" +
+			string(optionsB) + "|" + comment + "|" + imageUrl
+
+		_, err = write_f.WriteString(new_text + "\n")
 		if err != nil {
 			log.Fatal("error occurs when writing to file:", err)
 		}
@@ -606,7 +1017,7 @@ func GenerateAddress() []address {
 	return addresses
 }
 
-func generateRestaurant() []string {
+func generateRestaurant(categories []string) []string {
 	addresses := GenerateAddress()
 
 	read_f, err := os.Open("Initial/restaurant.txt")
@@ -623,6 +1034,14 @@ func generateRestaurant() []string {
 	// remember to close the file at the end of the program
 	defer write_f.Close()
 
+	urls := []string{
+		"https://example1.com",
+		"https://example2.com",
+		"https://example3.com",
+	}
+	operationStartOptions := []string{"0600", "0700", "0800", "0900", "1100", "1200"}
+	operationEndOptions := []string{"1900", "2100", "2300", "2400", "0200"}
+
 	// read the file line by line using scanner
 	scanner := bufio.NewScanner(read_f)
 	address_number := len(addresses)
@@ -634,11 +1053,34 @@ func generateRestaurant() []string {
 		// do something with a line
 		name := scanner.Text()
 		restaurant := addresses[rand.Intn(address_number)]
+		openStart := operationStartOptions[rand.Intn(len(operationStartOptions))]
+		openEnd := operationEndOptions[rand.Intn(len(operationEndOptions))]
+
+		operationHours := make([][]string, 7)
+		for i := range operationHours {
+			if i < 5 {
+				operationHours[i] = []string{openStart, openEnd}
+			} else {
+				openEnd = operationEndOptions[rand.Intn(len(operationEndOptions))]
+				operationHours[i] = []string{openStart, openEnd}
+			}
+		}
+
+		operationB, err := json.Marshal(operationHours)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		logoUrl := urls[rand.Intn(len(urls))]
+		headerUrl := urls[rand.Intn(len(urls))]
+		tag := categories[rand.Intn(len(categories))]
 
 		new_text := id + "|" + name + "|" + restaurant.unit_number + "|" +
-			restaurant.address_line1 + "|" + restaurant.address_line2 + "|" + strconv.Itoa(restaurant.postal_code)
+			restaurant.address_line1 + "|" + restaurant.address_line2 + "|" +
+			strconv.Itoa(restaurant.postal_code) + "|" + tag + "|" + string(operationB) +
+			"|" + logoUrl + "|" + headerUrl
 
-		_, err := write_f.WriteString(new_text + "\n")
+		_, err = write_f.WriteString(new_text + "\n")
 		if err != nil {
 			log.Fatal("error occurs when writing to file:", err)
 		}

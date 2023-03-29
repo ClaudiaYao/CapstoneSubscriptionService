@@ -13,13 +13,13 @@ select * FROM dish_delivery where subscription_dish_id = $1;
 -- name: InsertSubscription :one
 insert into subscription ("id", "user_id", "playlist_id",
   "customized", "status", "frequency", "start_date",
-  "end_date" ) values ($1, $2, $3, $4, $5, $6, $7, $8)
+  "end_date", "receiver_name", "receiver_contact") values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
   returning *;
 
 -- name: InsertDishes :one
 insert into subscription_dish ("id", "dish_id", "subscription_id",
-  "schedule_time", "frequency", "note")
-  values ($1, $2, $3, $4, $5, $6)
+  "schedule_time", "frequency", "dish_options", "note")
+  values ($1, $2, $3, $4, $5, $6, $7)
   returning *;
 
 -- name: InsertDishDelivery :one
