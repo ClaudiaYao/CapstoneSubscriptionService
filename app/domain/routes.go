@@ -24,13 +24,6 @@ func (service *SubscriptionService) Routes() http.Handler {
 
 	mux.Use(middleware.Heartbeat("/ping"))
 
-	// mux.Route("/playlists", func(r chi.Router) {
-	// 	r.Get("/", app.Playlists)
-	// 	r.Post("/new", app.CreatePlaylist)
-
-	// 	r.Get("/{code}", h.internalPlan.Get)
-	// 	r.Put("/{code}", h.internalPlan.Update)
-	// })
 	mux.Get("/", service.Welcome)
 
 	mux.Route("/subscription", func(mux chi.Router) {
